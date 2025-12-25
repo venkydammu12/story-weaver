@@ -101,8 +101,10 @@ const Index = () => {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <CinematicNavigation />
-            <StoryWorld onStorySelect={handleStorySelect} />
+            <StoryWorld 
+              onStorySelect={handleStorySelect} 
+              onBack={() => setCurrentView("landing")}
+            />
           </motion.div>
         )}
 

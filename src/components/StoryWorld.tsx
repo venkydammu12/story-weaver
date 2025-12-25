@@ -1,8 +1,10 @@
 import { motion } from "framer-motion";
+import { ArrowLeft } from "lucide-react";
 import { StoryCard } from "./StoryCard";
 
 interface StoryWorldProps {
   onStorySelect?: (storyId: string) => void;
+  onBack?: () => void;
 }
 
 const stories = [
@@ -50,7 +52,7 @@ const stories = [
   },
 ];
 
-export const StoryWorld = ({ onStorySelect }: StoryWorldProps) => {
+export const StoryWorld = ({ onStorySelect, onBack }: StoryWorldProps) => {
   return (
     <motion.section
       initial={{ opacity: 0 }}
@@ -59,6 +61,31 @@ export const StoryWorld = ({ onStorySelect }: StoryWorldProps) => {
       className="min-h-screen py-24 md:py-32 px-6 md:px-12"
     >
       <div className="max-w-7xl mx-auto">
+        {/* Navigation Bar */}
+        <motion.nav
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.6 }}
+          className="fixed top-0 left-0 right-0 z-50 px-6 md:px-12 py-6 bg-background/80 backdrop-blur-md border-b border-border/20"
+        >
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <button
+              onClick={onBack}
+              className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors duration-300 group"
+            >
+              <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform duration-300" />
+              <span className="text-sm">Back</span>
+            </button>
+            
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center">
+                <div className="w-3 h-3 rounded-full bg-primary animate-glow-pulse" />
+              </div>
+              <span className="font-display text-lg text-foreground">Narrativa</span>
+            </div>
+          </div>
+        </motion.nav>
+
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
