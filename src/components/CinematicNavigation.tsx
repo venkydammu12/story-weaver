@@ -15,16 +15,8 @@ export const CinematicNavigation = ({ onEnterWorld }: CinematicNavigationProps) 
       className="fixed top-0 left-0 right-0 z-50 px-6 md:px-12 py-6"
     >
       <nav className="flex items-center justify-between max-w-7xl mx-auto">
-        {/* Logo */}
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          className="flex items-center gap-3 cursor-pointer"
-        >
-          <div className="w-8 h-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center">
-            <div className="w-3 h-3 rounded-full bg-primary animate-glow-pulse" />
-          </div>
-          <span className="font-display text-lg text-foreground">Narrativa</span>
-        </motion.div>
+        {/* Spacer for layout balance */}
+        <div />
 
         {/* Nav links */}
         <div className="hidden md:flex items-center gap-12">
