@@ -1,8 +1,100 @@
 import { motion, useScroll, useTransform } from "framer-motion";
+import { useState } from "react";
 
 interface CinematicNavigationProps {
   onEnterWorld?: () => void;
 }
+
+const NavItem = ({ label }: { label: string }) => {
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <motion.button
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
+      onTouchStart={() => setIsHovered(true)}
+      onTouchEnd={() => setIsHovered(false)}
+      className="relative px-6 py-3 cursor-pointer"
+      initial={false}
+      animate={{
+        scale: isHovered ? 1.08 : 1,
+      }}
+      transition={{
+        duration: 0.5,
+        ease: [0.25, 0.1, 0.25, 1],
+      }}
+    >
+      {/* Revolving glow ring */}
+      <motion.div
+        className="absolute inset-0 pointer-events-none"
+        initial={false}
+        animate={{
+          opacity: isHovered ? 1 : 0,
+        }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+      >
+        <motion.div
+          className="absolute inset-[-4px] rounded-full"
+          style={{
+            background: "conic-gradient(from 0deg, transparent 0%, hsl(0 100% 25% / 0.6) 25%, transparent 50%, hsl(0 100% 30% / 0.4) 75%, transparent 100%)",
+            filter: "blur(3px)",
+          }}
+          animate={{
+            rotate: isHovered ? 360 : 0,
+          }}
+          transition={{
+            duration: 4,
+            ease: "linear",
+            repeat: Infinity,
+          }}
+        />
+      </motion.div>
+
+      {/* Inner glow background */}
+      <motion.div
+        className="absolute inset-0 rounded-full pointer-events-none"
+        style={{
+          background: "radial-gradient(ellipse at center, hsl(0 100% 20% / 0.3) 0%, transparent 70%)",
+        }}
+        initial={false}
+        animate={{
+          opacity: isHovered ? 1 : 0,
+          scale: isHovered ? 1.2 : 0.8,
+        }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+      />
+
+      {/* Subtle border glow */}
+      <motion.div
+        className="absolute inset-0 rounded-full pointer-events-none"
+        style={{
+          border: "1px solid hsl(0 100% 25% / 0.5)",
+          boxShadow: "0 0 20px hsl(0 100% 20% / 0.4), inset 0 0 15px hsl(0 100% 20% / 0.2)",
+        }}
+        initial={false}
+        animate={{
+          opacity: isHovered ? 1 : 0,
+          scale: isHovered ? 1 : 0.9,
+        }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+      />
+
+      {/* Text with glow */}
+      <motion.span
+        className="relative z-10 text-sm font-medium tracking-wide"
+        style={{ color: "#ffffff" }}
+        animate={{
+          textShadow: isHovered 
+            ? "0 0 20px hsl(0 100% 30% / 0.8), 0 0 40px hsl(0 100% 25% / 0.5), 0 0 60px hsl(0 100% 20% / 0.3)"
+            : "0 0 0px transparent",
+        }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+      >
+        {label}
+      </motion.span>
+    </motion.button>
+  );
+};
 
 export const CinematicNavigation = ({ onEnterWorld }: CinematicNavigationProps) => {
   const { scrollYProgress } = useScroll();
@@ -19,49 +111,10 @@ export const CinematicNavigation = ({ onEnterWorld }: CinematicNavigationProps) 
         <div />
 
         {/* Nav links */}
-        <div className="hidden md:flex items-center gap-8">
-          <motion.button 
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="relative px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-all duration-300 group"
-          >
-            <span className="relative z-10">Stories</span>
-            <motion.div 
-              className="absolute inset-0 bg-primary/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-              initial={false}
-            />
-            <motion.div 
-              className="absolute inset-0 border border-primary/40 rounded-full opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300"
-            />
-          </motion.button>
-          <motion.button 
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="relative px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-all duration-300 group"
-          >
-            <span className="relative z-10">Authors</span>
-            <motion.div 
-              className="absolute inset-0 bg-primary/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-              initial={false}
-            />
-            <motion.div 
-              className="absolute inset-0 border border-primary/40 rounded-full opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300"
-            />
-          </motion.button>
-          <motion.button 
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="relative px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-all duration-300 group"
-          >
-            <span className="relative z-10">About</span>
-            <motion.div 
-              className="absolute inset-0 bg-primary/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-              initial={false}
-            />
-            <motion.div 
-              className="absolute inset-0 border border-primary/40 rounded-full opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300"
-            />
-          </motion.button>
+        <div className="hidden md:flex items-center gap-6">
+          <NavItem label="Stories" />
+          <NavItem label="Authors" />
+          <NavItem label="About" />
         </div>
 
         {/* Enter button */}
