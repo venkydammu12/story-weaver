@@ -77,12 +77,7 @@ export const StoryWorld = ({ onStorySelect, onBack }: StoryWorldProps) => {
               <span className="text-sm">Back</span>
             </button>
             
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center">
-                <div className="w-3 h-3 rounded-full bg-primary animate-glow-pulse" />
-              </div>
-              <span className="font-display text-lg text-foreground">Narrativa</span>
-            </div>
+            <div />
           </div>
         </motion.nav>
 
