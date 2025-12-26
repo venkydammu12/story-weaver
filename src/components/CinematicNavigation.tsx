@@ -113,7 +113,7 @@ export const CinematicNavigation = ({ onEnterWorld }: CinematicNavigationProps) 
         {/* Nav links */}
         <div className="hidden md:flex items-center gap-6">
           <NavItem label="Stories" />
-          <NavItem label="Authors" />
+          <NavItem label="Author" />
           <NavItem label="About" />
         </div>
 
