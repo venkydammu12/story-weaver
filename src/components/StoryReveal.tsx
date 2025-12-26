@@ -36,9 +36,13 @@ export const StoryReveal = ({ title, subtitle, description, index }: StoryReveal
         {/* Number indicator */}
         <motion.span
           initial={{ opacity: 0 }}
-          whileInView={{ opacity: 0.15 }}
+          whileInView={{ opacity: 0.4 }}
           transition={{ duration: 1 }}
-          className="font-display text-[120px] md:text-[200px] absolute -left-4 md:left-0 top-20 text-primary select-none pointer-events-none"
+          className="font-display text-[120px] md:text-[200px] absolute -left-4 md:left-0 top-20 select-none pointer-events-none"
+          style={{
+            color: "hsl(0 85% 45%)",
+            textShadow: "0 0 60px hsl(0 100% 35% / 0.5), 0 0 120px hsl(0 100% 30% / 0.3)",
+          }}
         >
           {String(index + 1).padStart(2, '0')}
         </motion.span>
