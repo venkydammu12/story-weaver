@@ -5,16 +5,17 @@ interface CinematicNavigationProps {
   onEnterWorld?: () => void;
 }
 
-const NavItem = ({ label }: { label: string }) => {
+const NavItem = ({ label, href = "/" }: { label: string; href?: string }) => {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
-    <motion.button
+    <motion.a
+      href={href}
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
       onTouchStart={() => setIsHovered(true)}
       onTouchEnd={() => setIsHovered(false)}
-      className="relative px-6 py-3 cursor-pointer"
+      className="relative px-6 py-3 cursor-pointer no-underline"
       initial={false}
       animate={{
         scale: isHovered ? 1.08 : 1,
@@ -92,7 +93,7 @@ const NavItem = ({ label }: { label: string }) => {
       >
         {label}
       </motion.span>
-    </motion.button>
+    </motion.a>
   );
 };
 
@@ -112,9 +113,9 @@ export const CinematicNavigation = ({ onEnterWorld }: CinematicNavigationProps) 
 
         {/* Nav links */}
         <div className="hidden md:flex items-center gap-6">
-          <NavItem label="Stories" />
-          <NavItem label="Author" />
-          <NavItem label="About" />
+          <NavItem label="Stories" href="/" />
+          <NavItem label="Author" href="/author" />
+          <NavItem label="About" href="/" />
         </div>
 
         {/* Enter button */}
