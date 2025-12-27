@@ -4,7 +4,7 @@ import authorProfile from '@/assets/author-profile.jpeg';
 
 const Author = () => {
   const authorInfo = [
-    { label: 'Full Name', value: 'Waseem Akram' },
+    { label: 'Full Name', value: 'D. Venky' },
     { label: 'Role', value: 'Author / Storyteller / Poet' },
     { label: 'Date of Birth', value: 'January 15, 1995' },
     { label: 'Education', value: 'Bachelor of Arts in Literature' },
@@ -79,7 +79,7 @@ const Author = () => {
           className="text-4xl md:text-6xl lg:text-7xl font-light tracking-[0.15em] text-center mb-4"
           style={{ fontFamily: 'Georgia, serif' }}
         >
-          Waseem Akram
+          D. Venky
         </motion.h1>
 
         {/* Tagline */}
@@ -227,7 +227,7 @@ const Author = () => {
                 className="text-2xl md:text-3xl italic text-neutral-400"
                 style={{ fontFamily: 'Georgia, serif' }}
               >
-                — Waseem Akram
+                — D. Venky
               </p>
               <div className="w-full h-px bg-gradient-to-r from-transparent via-red-900/50 to-red-900/30 mt-2" />
             </div>
