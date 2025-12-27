@@ -4,7 +4,7 @@ import { CinematicIntro } from "@/components/CinematicIntro";
 import { CinematicNavigation } from "@/components/CinematicNavigation";
 import { ParallaxBackground } from "@/components/ParallaxBackground";
 import { StoryReveal } from "@/components/StoryReveal";
-import { AuthorSection } from "@/components/AuthorSection";
+
 import { FinalInvitation } from "@/components/FinalInvitation";
 import { StoryWorld } from "@/components/StoryWorld";
 import { StoryReader } from "@/components/StoryReader";
@@ -82,8 +82,6 @@ const Index = () => {
               />
             ))}
 
-            {/* Author section */}
-            <AuthorSection />
 
             {/* Final invitation */}
             <FinalInvitation onEnter={handleEnterWorld} />
