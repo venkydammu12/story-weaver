@@ -6,7 +6,7 @@ const Author = () => {
   const authorInfo = [
     { label: 'Full Name', value: 'D. Venky' },
     { label: 'Role', value: 'Author / Storyteller / Poet' },
-    { label: 'Date of Birth', value: 'January 15, 1995' },
+    { label: 'Date of Birth', value: 'August 7, 2004' },
     { label: 'Education', value: 'Bachelor of Arts in Literature' },
     { label: 'Languages', value: 'English, Urdu, Hindi' },
     { label: 'Genres', value: 'Romance, Drama, Poetry, Emotional Fiction' },
