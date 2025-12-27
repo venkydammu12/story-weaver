@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { CinematicNavigation } from '@/components/CinematicNavigation';
+import authorProfile from '@/assets/author-profile.jpeg';
 
 const Author = () => {
   const authorInfo = [
@@ -62,16 +63,11 @@ const Author = () => {
             whileHover={{ scale: 1.05 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
           >
-            {/* Placeholder silhouette */}
-            <div className="w-full h-full bg-gradient-to-b from-neutral-800 to-neutral-900 flex items-center justify-center">
-              <svg 
-                className="w-32 h-32 md:w-40 md:h-40 text-neutral-700" 
-                fill="currentColor" 
-                viewBox="0 0 24 24"
-              >
-                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-              </svg>
-            </div>
+            <img 
+              src={authorProfile} 
+              alt="Venky - Author" 
+              className="w-full h-full object-cover"
+            />
           </motion.div>
         </motion.div>
 
