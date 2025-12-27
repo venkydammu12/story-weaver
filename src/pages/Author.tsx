@@ -8,7 +8,7 @@ const Author = () => {
     { label: 'Role', value: 'Author / Storyteller / Poet' },
     { label: 'Date of Birth', value: 'August 7, 2004' },
     { label: 'Education', value: 'Bachelor of Arts in Literature' },
-    { label: 'Languages', value: 'English, Urdu, Hindi' },
+    { label: 'Languages', value: 'English, Telugu' },
     { label: 'Genres', value: 'Romance, Drama, Poetry, Emotional Fiction' },
   ];
 
