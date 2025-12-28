@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion';
+import { ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { CinematicNavigation } from '@/components/CinematicNavigation';
 import authorProfile from '@/assets/author-profile.jpeg';
-
 const Author = () => {
   const authorInfo = [
     { label: 'Full Name', value: 'D. Venky' },
@@ -21,9 +22,34 @@ const Author = () => {
     "To me, storytelling isn't a craft. It's a calling. A way of living. A way of loving.",
   ];
 
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen bg-black text-white overflow-x-hidden">
       <CinematicNavigation />
+      
+      {/* Back Navigation Arrow */}
+      <motion.button
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.6, delay: 0.3 }}
+        onClick={() => navigate(-1)}
+        className="fixed top-24 left-6 z-40 flex items-center gap-2 text-neutral-400 hover:text-white transition-colors duration-300 group"
+      >
+        <motion.div
+          whileHover={{ x: -4 }}
+          transition={{ duration: 0.2 }}
+          className="p-2 rounded-full border border-neutral-700 group-hover:border-red-900/50 group-hover:bg-red-900/10 transition-all duration-300"
+        >
+          <ArrowLeft size={20} />
+        </motion.div>
+        <span 
+          className="text-sm tracking-[0.2em] uppercase opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+          style={{ fontFamily: 'Georgia, serif' }}
+        >
+          Back
+        </span>
+      </motion.button>
       
       {/* Hero Section with Author Portrait */}
       <section className="min-h-screen flex flex-col items-center justify-center px-6 pt-24 pb-16">
