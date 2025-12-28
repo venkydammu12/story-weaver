@@ -54,7 +54,10 @@ const Index = () => {
   };
 
   return (
-    <main className="relative bg-background min-h-screen overflow-x-hidden">
+    <main 
+      className="relative bg-background min-h-screen overflow-x-hidden"
+      style={{ perspective: '2000px', transformStyle: 'preserve-3d' }}
+    >
       <ParallaxBackground />
 
       <AnimatePresence mode="wait">

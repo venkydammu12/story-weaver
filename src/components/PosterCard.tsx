@@ -1,4 +1,5 @@
-import { motion } from "framer-motion";
+import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
+import { useState } from "react";
 import { Story, Language } from "@/data/stories";
 
 interface PosterCardProps {
@@ -74,16 +75,50 @@ const posterPatterns: Record<string, React.ReactNode> = {
 };
 
 export const PosterCard = ({ story, language, index, onClick }: PosterCardProps) => {
+  const [isHovered, setIsHovered] = useState(false);
+  
+  // Mouse position for 3D tilt effect
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  
+  // Spring config for smooth animation
+  const springConfig = { stiffness: 150, damping: 15 };
+  const rotateX = useSpring(useTransform(y, [-0.5, 0.5], [8, -8]), springConfig);
+  const rotateY = useSpring(useTransform(x, [-0.5, 0.5], [-8, 8]), springConfig);
+  
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    x.set((e.clientX - centerX) / rect.width);
+    y.set((e.clientY - centerY) / rect.height);
+  };
+  
+  const handleMouseLeave = () => {
+    x.set(0);
+    y.set(0);
+    setIsHovered(false);
+  };
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 40 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0, y: 40, rotateX: 10 }}
+      animate={{ opacity: 1, y: 0, rotateX: 0 }}
       transition={{
         duration: 0.8,
         delay: index * 0.1,
         ease: [0.16, 1, 0.3, 1],
       }}
-      whileHover={{ scale: 1.05 }}
+      style={{ 
+        rotateX: isHovered ? rotateX : 0, 
+        rotateY: isHovered ? rotateY : 0,
+        transformStyle: 'preserve-3d',
+        perspective: '1000px',
+      }}
+      whileHover={{ scale: 1.05, z: 50 }}
+      onMouseMove={handleMouseMove}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={handleMouseLeave}
       onClick={onClick}
       className="group relative cursor-pointer"
     >
