@@ -11,7 +11,10 @@ const StoriesPosters = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div 
+      className="min-h-screen bg-background"
+      style={{ perspective: '2000px', transformStyle: 'preserve-3d' }}
+    >
       {/* Fixed Navigation */}
       <motion.nav
         initial={{ opacity: 0, y: -20 }}
@@ -59,8 +62,11 @@ const StoriesPosters = () => {
             </p>
           </motion.header>
 
-          {/* Poster Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
+          {/* Poster Grid with 3D effect */}
+          <motion.div 
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8"
+            style={{ transformStyle: 'preserve-3d' }}
+          >
             {stories.map((story, index) => (
               <PosterCard
                 key={story.id}
@@ -69,7 +75,7 @@ const StoriesPosters = () => {
                 index={index}
               />
             ))}
-          </div>
+          </motion.div>
 
           {/* Footer Note */}
           <motion.div
