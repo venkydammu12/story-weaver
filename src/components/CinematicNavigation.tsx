@@ -103,7 +103,7 @@ export const CinematicNavigation = ({ onEnterWorld }: CinematicNavigationProps) 
 
   useEffect(() => {
     const unsubscribe = scrollY.on("change", (latest) => {
-      if (latest > 100 && !hasScrolled) {
+      if (latest > 50 && !hasScrolled) {
         setHasScrolled(true);
       }
     });
