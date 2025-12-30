@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { useState } from "react";
 
 interface CinematicNavigationProps {
@@ -98,11 +98,13 @@ const NavItem = ({ label, href = "/" }: { label: string; href?: string }) => {
 };
 
 export const CinematicNavigation = ({ onEnterWorld }: CinematicNavigationProps) => {
+  const { scrollYProgress } = useScroll();
+  const opacity = useTransform(scrollYProgress, [0, 0.1], [0, 1]);
+  const y = useTransform(scrollYProgress, [0, 0.1], [-20, 0]);
+
   return (
     <motion.header
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.8, delay: 0.5 }}
+      style={{ opacity, y }}
       className="fixed top-0 left-0 right-0 z-50 px-6 md:px-12 py-6"
     >
       <nav className="flex items-center justify-center max-w-7xl mx-auto relative">
