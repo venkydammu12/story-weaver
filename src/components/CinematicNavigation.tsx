@@ -105,20 +105,20 @@ export const CinematicNavigation = ({ onEnterWorld }: CinematicNavigationProps) 
       transition={{ duration: 0.8, delay: 0.5 }}
       className="fixed top-0 left-0 right-0 z-50 px-6 md:px-12 py-6"
     >
-      <nav className="flex items-center justify-between max-w-7xl mx-auto">
-        {/* Nav links */}
+      <nav className="flex items-center justify-center max-w-7xl mx-auto relative">
+        {/* Nav links - centered */}
         <div className="flex items-center gap-4 md:gap-6">
           <NavItem label="Story Posters" href="/stories" />
           <NavItem label="Author" href="/author" />
           <NavItem label="About" href="/" />
         </div>
 
-        {/* Enter button */}
+        {/* Enter button - positioned right */}
         <motion.button
           onClick={onEnterWorld}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className="btn-cinematic text-xs"
+          className="btn-cinematic text-xs absolute right-0"
         >
           Enter World
         </motion.button>
