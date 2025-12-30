@@ -1,5 +1,5 @@
 import { motion, useScroll, useTransform } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 interface CinematicNavigationProps {
   onEnterWorld?: () => void;
@@ -98,28 +98,14 @@ const NavItem = ({ label, href = "/" }: { label: string; href?: string }) => {
 };
 
 export const CinematicNavigation = ({ onEnterWorld }: CinematicNavigationProps) => {
-  const [hasScrolled, setHasScrolled] = useState(false);
   const { scrollY } = useScroll();
-
-  useEffect(() => {
-    const unsubscribe = scrollY.on("change", (latest) => {
-      if (latest > 50 && !hasScrolled) {
-        setHasScrolled(true);
-      }
-    });
-    return () => unsubscribe();
-  }, [scrollY, hasScrolled]);
+  const opacity = useTransform(scrollY, [0, 20, 80], [0, 0.7, 1]);
+  const y = useTransform(scrollY, [0, 80], [-20, 0]);
 
   return (
     <motion.header
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ 
-        opacity: hasScrolled ? 1 : 0, 
-        y: hasScrolled ? 0 : -20 
-      }}
-      transition={{ duration: 0.6, ease: "easeOut" }}
-      className="fixed top-0 left-0 right-0 z-50 px-6 md:px-12 py-6 pointer-events-none"
-      style={{ pointerEvents: hasScrolled ? "auto" : "none" }}
+      style={{ opacity, y }}
+      className="fixed top-0 left-0 right-0 z-50 px-6 md:px-12 py-6"
     >
       <nav className="flex items-center justify-center max-w-7xl mx-auto relative">
         {/* Nav links - centered */}
