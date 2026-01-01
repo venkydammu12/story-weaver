@@ -1,4 +1,4 @@
-import { motion, useScroll } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { useEffect, useState } from "react";
 
 interface CinematicNavigationProps {
@@ -101,7 +101,7 @@ export const CinematicNavigation = ({ onEnterWorld }: CinematicNavigationProps) 
   const { scrollY } = useScroll();
   const [revealed, setRevealed] = useState(false);
 
-  // Hidden on first load. Once the user scrolls even a little, it becomes visible forever.
+  // Track if user has ever scrolled - once true, stays true
   useEffect(() => {
     const unsubscribe = scrollY.on("change", (latest) => {
       if (latest > 0) setRevealed(true);
@@ -109,13 +109,18 @@ export const CinematicNavigation = ({ onEnterWorld }: CinematicNavigationProps) 
     return () => unsubscribe();
   }, [scrollY]);
 
+  // Scroll-linked animation: nav slides down as user scrolls
+  const opacity = useTransform(scrollY, [0, 30, 80], [0, 0.5, 1]);
+  const y = useTransform(scrollY, [0, 80], [-40, 0]);
+
   return (
     <motion.header
-      initial={{ opacity: 0, y: -12 }}
-      animate={revealed ? { opacity: 1, y: 0 } : { opacity: 0, y: -12 }}
-      transition={{ duration: 0.6, ease: "easeOut" }}
-      className="fixed top-0 left-0 right-0 z-50 px-6 md:px-12 py-6 pointer-events-none"
-      style={{ pointerEvents: revealed ? "auto" : "none" }}
+      style={{ 
+        opacity: revealed ? opacity : 0, 
+        y: revealed ? y : -40,
+        pointerEvents: revealed ? "auto" : "none"
+      }}
+      className="fixed top-0 left-0 right-0 z-50 px-6 md:px-12 py-6"
     >
       <nav className="flex items-center justify-center max-w-7xl mx-auto relative">
         {/* Nav links - centered */}
