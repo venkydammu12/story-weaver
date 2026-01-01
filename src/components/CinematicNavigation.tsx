@@ -99,8 +99,10 @@ const NavItem = ({ label, href = "/" }: { label: string; href?: string }) => {
 
 export const CinematicNavigation = ({ onEnterWorld }: CinematicNavigationProps) => {
   const { scrollY } = useScroll();
-  const opacity = useTransform(scrollY, [0, 20, 80], [0, 0.7, 1]);
-  const y = useTransform(scrollY, [0, 80], [-20, 0]);
+
+  // Start revealing immediately when the user begins scrolling
+  const opacity = useTransform(scrollY, [0, 1, 40], [0, 0.7, 1]);
+  const y = useTransform(scrollY, [0, 40], [-12, 0]);
 
   return (
     <motion.header
