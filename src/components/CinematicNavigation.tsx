@@ -1,11 +1,18 @@
-import { motion, useScroll, useTransform } from "framer-motion";
-import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { useState } from "react";
+import { useLocation } from "react-router-dom";
 
 interface CinematicNavigationProps {
   onEnterWorld?: () => void;
 }
 
-const NavItem = ({ label, href = "/" }: { label: string; href?: string }) => {
+interface NavItemProps {
+  label: string;
+  href?: string;
+  isActive?: boolean;
+}
+
+const NavItem = ({ label, href = "/", isActive = false }: NavItemProps) => {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
@@ -15,7 +22,7 @@ const NavItem = ({ label, href = "/" }: { label: string; href?: string }) => {
       onHoverEnd={() => setIsHovered(false)}
       onTouchStart={() => setIsHovered(true)}
       onTouchEnd={() => setIsHovered(false)}
-      className="relative px-6 py-3 cursor-pointer no-underline"
+      className="relative px-3 py-2 md:px-5 md:py-3 cursor-pointer no-underline"
       initial={false}
       animate={{
         scale: isHovered ? 1.08 : 1,
@@ -80,14 +87,29 @@ const NavItem = ({ label, href = "/" }: { label: string; href?: string }) => {
         transition={{ duration: 0.4, ease: "easeOut" }}
       />
 
+      {/* Active indicator - dark red underline */}
+      {isActive && (
+        <motion.div
+          className="absolute bottom-0 left-1/2 h-[2px] bg-[hsl(0_85%_35%)] rounded-full"
+          initial={{ width: 0, x: "-50%" }}
+          animate={{ width: "60%", x: "-50%" }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          style={{
+            boxShadow: "0 0 10px hsl(0 85% 35% / 0.8), 0 0 20px hsl(0 85% 35% / 0.4)",
+          }}
+        />
+      )}
+
       {/* Text with glow */}
       <motion.span
-        className="relative z-10 text-sm font-medium tracking-wide"
+        className="relative z-10 text-xs md:text-sm font-medium tracking-wide whitespace-nowrap"
         style={{ color: "#ffffff" }}
         animate={{
-          textShadow: isHovered 
+          textShadow: isHovered || isActive
             ? "0 0 20px hsl(0 100% 30% / 0.8), 0 0 40px hsl(0 100% 25% / 0.5), 0 0 60px hsl(0 100% 20% / 0.3)"
-            : "0 0 0px transparent",
+            : isActive 
+              ? "0 0 10px hsl(0 100% 30% / 0.5)"
+              : "0 0 0px transparent",
         }}
         transition={{ duration: 0.5, ease: "easeOut" }}
       >
@@ -98,47 +120,65 @@ const NavItem = ({ label, href = "/" }: { label: string; href?: string }) => {
 };
 
 export const CinematicNavigation = ({ onEnterWorld }: CinematicNavigationProps) => {
-  const { scrollY } = useScroll();
-  const [revealed, setRevealed] = useState(false);
+  const location = useLocation();
+  const currentPath = location.pathname;
 
-  // Track if user has ever scrolled - once true, stays true
-  useEffect(() => {
-    const unsubscribe = scrollY.on("change", (latest) => {
-      if (latest > 0) setRevealed(true);
-    });
-    return () => unsubscribe();
-  }, [scrollY]);
-
-  // Scroll-linked animation: nav slides down as user scrolls
-  const opacity = useTransform(scrollY, [0, 30, 80], [0, 0.5, 1]);
-  const y = useTransform(scrollY, [0, 80], [-40, 0]);
+  // Determine active nav item based on current route
+  const getIsActive = (href: string) => {
+    if (href === "/" && currentPath === "/") return true;
+    if (href !== "/" && currentPath.startsWith(href)) return true;
+    return false;
+  };
 
   return (
     <motion.header
-      style={{ 
-        opacity: revealed ? opacity : 0, 
-        y: revealed ? y : -40,
-        pointerEvents: revealed ? "auto" : "none"
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ 
+        duration: 0.8, 
+        ease: [0.25, 0.1, 0.25, 1],
+        delay: 0.2 
       }}
-      className="fixed top-0 left-0 right-0 z-50 px-6 md:px-12 py-6"
+      className="fixed top-0 left-0 right-0 z-50 px-4 md:px-12 py-4 md:py-5"
+      style={{
+        background: "linear-gradient(to bottom, hsl(0 0% 0% / 0.95) 0%, hsl(0 0% 0% / 0.85) 50%, hsl(0 0% 0% / 0.7) 100%)",
+        backdropFilter: "blur(12px)",
+        borderBottom: "1px solid hsl(0 0% 100% / 0.05)",
+      }}
     >
-      <nav className="flex items-center justify-center max-w-7xl mx-auto relative">
-        {/* Nav links - centered */}
-        <div className="flex items-center gap-4 md:gap-6">
-          <NavItem label="Story Posters" href="/stories" />
-          <NavItem label="Author" href="/author" />
-          <NavItem label="About" href="/" />
-        </div>
-
-        {/* Enter button - positioned right */}
+      <nav className="flex items-center justify-between max-w-7xl mx-auto">
+        {/* Enter World - Left */}
         <motion.button
           onClick={onEnterWorld}
-          whileHover={{ scale: 1.02 }}
+          whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.98 }}
-          className="btn-cinematic text-xs absolute right-0"
+          className="relative px-4 py-2 md:px-6 md:py-2.5 text-xs md:text-sm font-medium tracking-wider text-white overflow-hidden rounded-full"
+          style={{
+            background: "linear-gradient(135deg, hsl(0 85% 25% / 0.8) 0%, hsl(0 100% 15% / 0.9) 100%)",
+            border: "1px solid hsl(0 85% 35% / 0.5)",
+            boxShadow: "0 0 20px hsl(0 85% 25% / 0.3), inset 0 1px 0 hsl(0 85% 45% / 0.2)",
+          }}
         >
-          Enter World
+          <motion.span
+            className="absolute inset-0 opacity-0"
+            whileHover={{ opacity: 1 }}
+            style={{
+              background: "radial-gradient(circle at center, hsl(0 85% 40% / 0.4) 0%, transparent 70%)",
+            }}
+            transition={{ duration: 0.3 }}
+          />
+          <span className="relative z-10">Enter World</span>
         </motion.button>
+
+        {/* Nav links - Center */}
+        <div className="flex items-center gap-1 md:gap-4">
+          <NavItem label="Story Posters" href="/stories" isActive={getIsActive("/stories")} />
+          <NavItem label="Author" href="/author" isActive={getIsActive("/author")} />
+          <NavItem label="About" href="/" isActive={currentPath === "/"} />
+        </div>
+
+        {/* Spacer for symmetry */}
+        <div className="w-[100px] md:w-[140px]" />
       </nav>
     </motion.header>
   );
