@@ -1,10 +1,57 @@
-import { motion } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'framer-motion';
+import { useRef } from 'react';
 import { ArrowLeft, PenTool } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { CinematicNavigation } from '@/components/CinematicNavigation';
+import { ParallaxImage } from '@/components/ParallaxImage';
 import authorProfile from '@/assets/author-profile.jpeg';
 
+// Import AI-generated images
+import heroImage from '@/assets/author-hero.jpg';
+import infoImage from '@/assets/author-info.jpg';
+import storyImage from '@/assets/author-story.jpg';
+import quoteImage from '@/assets/author-quote.jpg';
+
+// Floating particles component for ambient animation
+const FloatingParticles = () => (
+  <div className="absolute inset-0 overflow-hidden pointer-events-none">
+    {[...Array(20)].map((_, i) => (
+      <motion.div
+        key={i}
+        className="absolute w-1 h-1 bg-red-500/30 rounded-full"
+        style={{
+          left: `${Math.random() * 100}%`,
+          top: `${Math.random() * 100}%`,
+        }}
+        animate={{
+          y: [0, -30, 0],
+          opacity: [0.2, 0.6, 0.2],
+          scale: [1, 1.5, 1],
+        }}
+        transition={{
+          duration: 4 + Math.random() * 3,
+          repeat: Infinity,
+          delay: Math.random() * 2,
+          ease: "easeInOut",
+        }}
+      />
+    ))}
+  </div>
+);
+
 const Author = () => {
+  const navigate = useNavigate();
+  const heroRef = useRef<HTMLDivElement>(null);
+  
+  const { scrollYProgress: heroProgress } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"],
+  });
+  
+  const heroY = useTransform(heroProgress, [0, 1], [0, 150]);
+  const heroScale = useTransform(heroProgress, [0, 1], [1, 1.1]);
+  const heroOpacity = useTransform(heroProgress, [0, 0.8], [1, 0]);
+
   const authorInfo = [
     { label: 'Full Name', value: 'D. Venky' },
     { label: 'Role', value: 'Author / Storyteller / Poet' },
@@ -22,8 +69,6 @@ const Author = () => {
     "My pen doesn't chase fame. It chases feeling. It chases the moment when a reader pauses, breathes, and whispers — 'This is exactly how I felt.'",
     "To me, storytelling isn't a craft. It's a calling. A way of living. A way of loving.",
   ];
-
-  const navigate = useNavigate();
 
   return (
     <div 
@@ -118,79 +163,106 @@ const Author = () => {
       </motion.button>
       
       {/* Hero Section with Author Portrait */}
-      <section className="min-h-screen flex flex-col items-center justify-center px-6 pt-24 pb-16">
-        {/* Author Portrait */}
+      <section 
+        ref={heroRef}
+        className="min-h-screen flex flex-col items-center justify-center px-6 pt-24 pb-16 relative overflow-hidden"
+      >
+        {/* Hero background image with parallax */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="relative mb-12"
+          style={{ y: heroY, scale: heroScale }}
+          className="absolute inset-0"
         >
-          {/* Outer Glow Ring */}
-          <motion.div
-            className="absolute inset-0 rounded-full"
+          <img 
+            src={heroImage} 
+            alt="Writer's sanctuary"
+            className="w-full h-full object-cover"
+          />
+          {/* Dark overlay */}
+          <div 
+            className="absolute inset-0"
             style={{
-              background: 'radial-gradient(circle, transparent 60%, hsl(0 70% 25% / 0.3) 100%)',
-              filter: 'blur(20px)',
-              transform: 'scale(1.3)',
-            }}
-            animate={{
-              opacity: [0.5, 0.8, 0.5],
-              scale: [1.3, 1.35, 1.3],
-            }}
-            transition={{
-              duration: 4,
-              repeat: Infinity,
-              ease: "easeInOut",
+              background: "linear-gradient(to bottom, hsl(0 0% 0% / 0.6) 0%, hsl(0 0% 0% / 0.75) 50%, hsl(0 0% 0% / 0.9) 100%)",
             }}
           />
-          
-          {/* Portrait Container */}
-          <motion.div
-            className="relative w-48 h-48 md:w-64 md:h-64 rounded-full overflow-hidden"
-            style={{
-              boxShadow: '0 0 60px hsl(0 70% 25% / 0.4), 0 0 120px hsl(0 70% 20% / 0.2), inset 0 0 60px hsl(0 70% 15% / 0.3)',
-              border: '2px solid hsl(0 70% 30% / 0.5)',
-            }}
-            whileHover={{ scale: 1.05 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-          >
-            <img 
-              src={authorProfile} 
-              alt="Venky - Author" 
-              className="w-full h-full object-cover"
-            />
-          </motion.div>
         </motion.div>
 
-        {/* Author Name */}
-        <motion.h1
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="text-4xl md:text-6xl lg:text-7xl font-light tracking-[0.15em] text-center mb-4"
-          style={{ fontFamily: 'Georgia, serif' }}
-        >
-          D. Venky
-        </motion.h1>
+        {/* Floating particles */}
+        <FloatingParticles />
 
-        {/* Tagline */}
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="text-lg md:text-xl text-neutral-400 italic text-center max-w-xl"
-          style={{ fontFamily: 'Georgia, serif' }}
-        >
-          "Where words breathe and silence speaks"
-        </motion.p>
+        <motion.div style={{ opacity: heroOpacity }} className="relative z-10">
+          {/* Author Portrait */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1.2, ease: [0.25, 0.46, 0.45, 0.94] }}
+            className="relative mb-12"
+          >
+            {/* Outer Glow Ring */}
+            <motion.div
+              className="absolute inset-0 rounded-full"
+              style={{
+                background: 'radial-gradient(circle, transparent 60%, hsl(0 70% 25% / 0.3) 100%)',
+                filter: 'blur(20px)',
+                transform: 'scale(1.3)',
+              }}
+              animate={{
+                opacity: [0.5, 0.8, 0.5],
+                scale: [1.3, 1.35, 1.3],
+              }}
+              transition={{
+                duration: 4,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            />
+            
+            {/* Portrait Container */}
+            <motion.div
+              className="relative w-48 h-48 md:w-64 md:h-64 rounded-full overflow-hidden mx-auto"
+              style={{
+                boxShadow: '0 0 60px hsl(0 70% 25% / 0.4), 0 0 120px hsl(0 70% 20% / 0.2), inset 0 0 60px hsl(0 70% 15% / 0.3)',
+                border: '2px solid hsl(0 70% 30% / 0.5)',
+              }}
+              whileHover={{ scale: 1.05 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+            >
+              <img 
+                src={authorProfile} 
+                alt="Venky - Author" 
+                className="w-full h-full object-cover"
+              />
+            </motion.div>
+          </motion.div>
+
+          {/* Author Name */}
+          <motion.h1
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+            className="text-4xl md:text-6xl lg:text-7xl font-light tracking-[0.15em] text-center mb-4"
+            style={{ fontFamily: 'Georgia, serif' }}
+          >
+            D. Venky
+          </motion.h1>
+
+          {/* Tagline */}
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+            className="text-lg md:text-xl text-neutral-400 italic text-center max-w-xl mx-auto"
+            style={{ fontFamily: 'Georgia, serif' }}
+          >
+            "Where words breathe and silence speaks"
+          </motion.p>
+        </motion.div>
 
         {/* Scroll Indicator */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.5, duration: 1 }}
-          className="absolute bottom-12 left-1/2 -translate-x-1/2"
+          className="absolute bottom-12 left-1/2 -translate-x-1/2 z-10"
         >
           <motion.div
             animate={{ y: [0, 10, 0] }}
@@ -201,8 +273,16 @@ const Author = () => {
       </section>
 
       {/* Author Information Section */}
-      <section className="py-24 px-6">
-        <div className="max-w-4xl mx-auto">
+      <section className="py-24 px-6 relative overflow-hidden">
+        {/* Background image */}
+        <ParallaxImage
+          src={infoImage}
+          alt="Books and typewriter"
+          speed={0.15}
+          overlayOpacity={0.85}
+        />
+
+        <div className="max-w-4xl mx-auto relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -220,7 +300,7 @@ const Author = () => {
           </motion.div>
 
           {/* Book-style Info Grid */}
-          <div className="space-y-0">
+          <div className="space-y-0 backdrop-blur-sm bg-black/30 rounded-2xl p-6 md:p-8 border border-white/5">
             {authorInfo.map((info, index) => (
               <motion.div
                 key={info.label}
@@ -255,16 +335,19 @@ const Author = () => {
       </section>
 
       {/* About the Author - Emotional Section */}
-      <section className="py-24 px-6 relative">
-        {/* Subtle background glow */}
-        <div 
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background: 'radial-gradient(ellipse at center, hsl(0 70% 10% / 0.15) 0%, transparent 70%)',
-          }}
+      <section className="py-24 px-6 relative overflow-hidden">
+        {/* Background image */}
+        <ParallaxImage
+          src={storyImage}
+          alt="Poet writing with floating words"
+          speed={0.2}
+          overlayOpacity={0.8}
         />
 
-        <div className="max-w-3xl mx-auto relative">
+        {/* Floating particles for this section */}
+        <FloatingParticles />
+
+        <div className="max-w-3xl mx-auto relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -286,8 +369,8 @@ const Author = () => {
             {aboutParagraphs.map((paragraph, index) => (
               <motion.p
                 key={index}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, y: 30, filter: "blur(4px)" }}
+                whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
                 viewport={{ once: true, margin: "-50px" }}
                 transition={{ 
                   duration: 0.8, 
@@ -315,12 +398,14 @@ const Author = () => {
             className="mt-16 text-right"
           >
             <div className="inline-block">
-              <p 
+              <motion.p 
                 className="text-2xl md:text-3xl italic text-neutral-400"
                 style={{ fontFamily: 'Georgia, serif' }}
+                animate={{ opacity: [0.7, 1, 0.7] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
               >
                 — D. Venky
-              </p>
+              </motion.p>
               <div className="w-full h-px bg-gradient-to-r from-transparent via-red-900/50 to-red-900/30 mt-2" />
             </div>
           </motion.div>
@@ -328,20 +413,55 @@ const Author = () => {
       </section>
 
       {/* Footer Quote */}
-      <section className="py-24 px-6">
+      <section className="py-24 px-6 relative overflow-hidden">
+        {/* Background image */}
+        <ParallaxImage
+          src={quoteImage}
+          alt="Heart made of words"
+          speed={0.1}
+          overlayOpacity={0.75}
+        />
+
         <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 1.2 }}
-          className="max-w-2xl mx-auto text-center"
+          className="max-w-2xl mx-auto text-center relative z-10"
         >
-          <p 
-            className="text-xl md:text-2xl text-neutral-500 italic"
-            style={{ fontFamily: 'Georgia, serif' }}
+          {/* Animated quote marks */}
+          <motion.span
+            className="block text-6xl md:text-8xl text-red-900/30 font-serif leading-none mb-4"
+            animate={{ 
+              opacity: [0.3, 0.5, 0.3],
+              scale: [1, 1.05, 1],
+            }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
           >
-            "Every story is a confession. Every word, a heartbeat."
-          </p>
+            "
+          </motion.span>
+          
+          <motion.p 
+            className="text-xl md:text-2xl text-neutral-300 italic"
+            style={{ fontFamily: 'Georgia, serif' }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+          >
+            Every story is a confession. Every word, a heartbeat.
+          </motion.p>
+          
+          <motion.span
+            className="block text-6xl md:text-8xl text-red-900/30 font-serif leading-none mt-4 rotate-180"
+            animate={{ 
+              opacity: [0.3, 0.5, 0.3],
+              scale: [1, 1.05, 1],
+            }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+          >
+            "
+          </motion.span>
         </motion.div>
       </section>
 
@@ -353,13 +473,14 @@ const Author = () => {
         transition={{ duration: 0.8 }}
         className="pb-16 text-center"
       >
-        <a 
+        <motion.a 
           href="/"
           className="inline-block text-sm tracking-[0.3em] text-neutral-500 hover:text-red-900 transition-colors duration-500 uppercase"
           style={{ fontFamily: 'Georgia, serif' }}
+          whileHover={{ scale: 1.05 }}
         >
           ← Return to Stories
-        </a>
+        </motion.a>
       </motion.div>
     </div>
   );
