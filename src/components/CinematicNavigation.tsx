@@ -137,7 +137,7 @@ export const CinematicNavigation = ({ onEnterWorld }: CinematicNavigationProps) 
         <div className="flex items-center gap-1 md:gap-4">
           <NavItem label="Story Posters" href="/stories" />
           <NavItem label="Author" href="/author" />
-          <NavItem label="About" href="/" />
+          <NavItem label="About" href="/about" />
         </div>
 
         {/* Enter World - Right */}
