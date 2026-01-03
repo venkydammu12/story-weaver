@@ -2,14 +2,25 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
 import { CinematicNavigation } from "@/components/CinematicNavigation";
 import { ParallaxBackground } from "@/components/ParallaxBackground";
+import { ParallaxImage } from "@/components/ParallaxImage";
+
+// Import AI-generated images
+import heroImage from "@/assets/about-hero.jpg";
+import ideaImage from "@/assets/about-idea.jpg";
+import experienceImage from "@/assets/about-experience.jpg";
+import invitationImage from "@/assets/about-invitation.jpg";
 
 // Cinematic section component with scroll animations
 const CinematicSection = ({ 
   children, 
-  className = "" 
+  className = "",
+  image,
+  imageAlt = "",
 }: { 
   children: React.ReactNode; 
   className?: string;
+  image?: string;
+  imageAlt?: string;
 }) => {
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
@@ -22,13 +33,28 @@ const CinematicSection = ({
   const scale = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0.95, 1, 1, 1.02]);
 
   return (
-    <motion.section
+    <section
       ref={ref}
-      style={{ opacity, y, scale }}
-      className={`relative py-24 md:py-32 lg:py-40 ${className}`}
+      className={`relative py-24 md:py-32 lg:py-40 overflow-hidden ${className}`}
     >
-      {children}
-    </motion.section>
+      {/* Parallax background image */}
+      {image && (
+        <ParallaxImage
+          src={image}
+          alt={imageAlt}
+          speed={0.2}
+          overlayOpacity={0.7}
+        />
+      )}
+      
+      {/* Content with animations */}
+      <motion.div
+        style={{ opacity, y, scale }}
+        className="relative z-10"
+      >
+        {children}
+      </motion.div>
+    </section>
   );
 };
 
@@ -69,7 +95,7 @@ const FeatureCard = ({
     viewport={{ once: true, margin: "-50px" }}
     transition={{ duration: 0.8, delay, ease: "easeOut" }}
     whileHover={{ scale: 1.02, y: -5 }}
-    className="relative p-6 md:p-8 rounded-2xl bg-black/40 border border-white/5 backdrop-blur-sm group cursor-default"
+    className="relative p-6 md:p-8 rounded-2xl bg-black/60 border border-white/10 backdrop-blur-md group cursor-default"
     style={{
       boxShadow: "0 0 40px hsl(0 0% 0% / 0.5)",
     }}
@@ -78,8 +104,8 @@ const FeatureCard = ({
     <motion.div
       className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
       style={{
-        background: "radial-gradient(circle at center, hsl(0 85% 25% / 0.15) 0%, transparent 70%)",
-        boxShadow: "inset 0 0 30px hsl(0 85% 30% / 0.1)",
+        background: "radial-gradient(circle at center, hsl(0 85% 25% / 0.2) 0%, transparent 70%)",
+        boxShadow: "inset 0 0 30px hsl(0 85% 30% / 0.15)",
       }}
     />
     
@@ -93,6 +119,16 @@ const FeatureCard = ({
 );
 
 const About = () => {
+  const heroRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress: heroProgress } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"],
+  });
+  
+  const heroY = useTransform(heroProgress, [0, 1], [0, 200]);
+  const heroScale = useTransform(heroProgress, [0, 1], [1, 1.1]);
+  const heroOpacity = useTransform(heroProgress, [0, 0.8], [1, 0]);
+
   return (
     <main 
       className="relative bg-background min-h-screen overflow-x-hidden"
@@ -102,16 +138,41 @@ const About = () => {
       <CinematicNavigation />
 
       {/* Hero Section - What This Is */}
-      <section className="relative min-h-screen flex items-center justify-center px-6">
+      <section 
+        ref={heroRef}
+        className="relative min-h-screen flex items-center justify-center overflow-hidden"
+      >
+        {/* Hero background image with parallax */}
+        <motion.div
+          style={{ y: heroY, scale: heroScale }}
+          className="absolute inset-0"
+        >
+          <img 
+            src={heroImage} 
+            alt="Cinematic story world entrance"
+            className="w-full h-full object-cover"
+          />
+          {/* Dark overlay */}
+          <div 
+            className="absolute inset-0"
+            style={{
+              background: "linear-gradient(to bottom, hsl(0 0% 0% / 0.5) 0%, hsl(0 0% 0% / 0.7) 50%, hsl(0 0% 0% / 0.9) 100%)",
+            }}
+          />
+        </motion.div>
+
         {/* Subtle radial glow */}
         <div 
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: "radial-gradient(ellipse 60% 40% at 50% 50%, hsl(0 85% 20% / 0.08) 0%, transparent 60%)",
+            background: "radial-gradient(ellipse 60% 40% at 50% 50%, hsl(0 85% 20% / 0.1) 0%, transparent 60%)",
           }}
         />
 
-        <div className="max-w-4xl mx-auto text-center relative z-10">
+        <motion.div 
+          style={{ opacity: heroOpacity }}
+          className="max-w-4xl mx-auto text-center relative z-10 px-6"
+        >
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -162,11 +223,11 @@ const About = () => {
               <motion.div className="w-1 h-2 bg-primary/50 rounded-full" />
             </motion.div>
           </motion.div>
-        </div>
+        </motion.div>
       </section>
 
       {/* The Idea - Why It Exists */}
-      <CinematicSection>
+      <CinematicSection image={ideaImage} imageAlt="Floating story pages">
         <div className="max-w-4xl mx-auto px-6 md:px-12">
           <AnimatedLine>
             <p className="text-primary/70 text-xs tracking-[0.3em] uppercase mb-4">
@@ -203,7 +264,7 @@ const About = () => {
       </CinematicSection>
 
       {/* The Experience - How It Feels */}
-      <CinematicSection className="bg-black/20">
+      <CinematicSection image={experienceImage} imageAlt="Immersive reading experience">
         <div className="max-w-4xl mx-auto px-6 md:px-12">
           <AnimatedLine>
             <p className="text-primary/70 text-xs tracking-[0.3em] uppercase mb-4">
@@ -280,12 +341,13 @@ const About = () => {
       </CinematicSection>
 
       {/* Closing Statement */}
-      <section className="relative py-32 md:py-48 px-6">
-        <div 
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background: "radial-gradient(ellipse 50% 50% at 50% 100%, hsl(0 85% 20% / 0.1) 0%, transparent 70%)",
-          }}
+      <section className="relative py-32 md:py-48 px-6 overflow-hidden">
+        {/* Background image */}
+        <ParallaxImage
+          src={invitationImage}
+          alt="Portal to story world"
+          speed={0.15}
+          overlayOpacity={0.75}
         />
 
         <div className="max-w-3xl mx-auto text-center relative z-10">
@@ -313,7 +375,7 @@ const About = () => {
               whileTap={{ scale: 0.98 }}
               className="inline-flex items-center gap-3 px-8 py-4 bg-transparent border border-primary/30 rounded-full text-foreground font-medium tracking-wide transition-all duration-300 hover:border-primary/60 hover:bg-primary/5 group"
               style={{
-                boxShadow: "0 0 20px hsl(0 85% 30% / 0.2)",
+                boxShadow: "0 0 30px hsl(0 85% 30% / 0.3)",
               }}
             >
               <span>Begin Your Journey</span>
