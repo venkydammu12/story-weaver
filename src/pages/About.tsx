@@ -1,8 +1,13 @@
 import { motion, useScroll, useTransform } from "framer-motion";
-import { useRef } from "react";
+import { useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { CinematicNavigation } from "@/components/CinematicNavigation";
 import { ParallaxBackground } from "@/components/ParallaxBackground";
 import { ParallaxImage } from "@/components/ParallaxImage";
+import { supabase } from "@/integrations/supabase/client";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 // Import AI-generated images
 import heroImage from "@/assets/about-hero.jpg";
@@ -119,7 +124,13 @@ const FeatureCard = ({
 );
 
 const About = () => {
+  const navigate = useNavigate();
   const heroRef = useRef<HTMLDivElement>(null);
+  const [email, setEmail] = useState("dammuvenky40@gmail.com");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  
   const { scrollYProgress: heroProgress } = useScroll({
     target: heroRef,
     offset: ["start start", "end start"],
@@ -128,6 +139,26 @@ const About = () => {
   const heroY = useTransform(heroProgress, [0, 1], [0, 200]);
   const heroScale = useTransform(heroProgress, [0, 1], [1, 1.1]);
   const heroOpacity = useTransform(heroProgress, [0, 0.8], [1, 0]);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      setError("Access Denied");
+      toast.error("Access Denied");
+    } else {
+      toast.success("Welcome back!");
+      navigate("/write");
+    }
+    setLoading(false);
+  };
 
   return (
     <main 
@@ -337,6 +368,76 @@ const About = () => {
               delay={0.4}
             />
           </div>
+        </div>
+      </CinematicSection>
+
+      {/* Author Login Section */}
+      <CinematicSection image={invitationImage} imageAlt="Author portal">
+        <div className="max-w-md mx-auto px-6 md:px-12">
+          <AnimatedLine className="text-center mb-8">
+            <p className="text-primary/70 text-xs tracking-[0.3em] uppercase mb-4">
+              Author Access
+            </p>
+            <h2 className="font-display text-3xl md:text-4xl text-foreground leading-[1.15]">
+              Writer Studio
+            </h2>
+          </AnimatedLine>
+
+          <motion.form
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            onSubmit={handleLogin}
+            className="space-y-6 p-8 rounded-2xl bg-black/60 border border-white/10 backdrop-blur-md"
+            style={{
+              boxShadow: "0 0 40px hsl(0 0% 0% / 0.5)",
+            }}
+          >
+            <div className="space-y-2">
+              <label className="text-sm text-muted-foreground">Email</label>
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="bg-black/50 border-white/10 text-foreground placeholder:text-muted-foreground/50"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm text-muted-foreground">Password</label>
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                className="bg-black/50 border-white/10 text-foreground placeholder:text-muted-foreground/50"
+                required
+              />
+            </div>
+
+            {error && (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-red-500 text-sm text-center font-medium"
+              >
+                {error}
+              </motion.p>
+            )}
+
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-primary/20 border border-primary/40 hover:bg-primary/30 text-foreground"
+              style={{
+                boxShadow: "0 0 20px hsl(0 85% 30% / 0.3)",
+              }}
+            >
+              {loading ? "Signing in..." : "Enter Writer Studio"}
+            </Button>
+          </motion.form>
         </div>
       </CinematicSection>
 
