@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, User, Eye, EyeOff, ArrowLeft, Loader2 } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowLeft, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -11,13 +11,11 @@ const passwordSchema = z.string().min(6, 'Password must be at least 6 characters
 
 const Auth = () => {
   const navigate = useNavigate();
-  const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState('dammuvenky40@gmail.com');
   const [password, setPassword] = useState('');
-  const [displayName, setDisplayName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string; displayName?: string }>({});
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
   useEffect(() => {
     // Check if user is already logged in
@@ -55,10 +53,6 @@ const Auth = () => {
       }
     }
 
-    if (!isLogin && !displayName.trim()) {
-      newErrors.displayName = 'Please enter your name';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -71,50 +65,22 @@ const Auth = () => {
     setIsLoading(true);
 
     try {
-      if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: email.trim(),
-          password,
-        });
-        
-        if (error) {
-          if (error.message.includes('Invalid login credentials')) {
-            toast.error('Invalid email or password');
-          } else {
-            toast.error(error.message);
-          }
-          return;
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+      
+      if (error) {
+        if (error.message.includes('Invalid login credentials')) {
+          toast.error('Invalid email or password');
+        } else {
+          toast.error(error.message);
         }
-        
-        toast.success('Welcome back!');
-        navigate('/write');
-      } else {
-        const redirectUrl = `${window.location.origin}/`;
-        
-        const { error } = await supabase.auth.signUp({
-          email: email.trim(),
-          password,
-          options: {
-            emailRedirectTo: redirectUrl,
-            data: {
-              display_name: displayName.trim(),
-            },
-          },
-        });
-        
-        if (error) {
-          if (error.message.includes('already registered')) {
-            toast.error('This email is already registered. Please login instead.');
-            setIsLogin(true);
-          } else {
-            toast.error(error.message);
-          }
-          return;
-        }
-        
-        toast.success('Account created successfully!');
-        navigate('/write');
+        return;
       }
+      
+      toast.success('Welcome back!');
+      navigate('/write');
     } catch (error) {
       toast.error('An unexpected error occurred');
     } finally {
@@ -208,41 +174,15 @@ const Auth = () => {
               className="text-3xl md:text-4xl tracking-[0.1em] mb-3"
               style={{ fontFamily: 'Georgia, serif' }}
             >
-              {isLogin ? 'Welcome Back' : 'Join Us'}
+              Writer Studio
             </h1>
             <p className="text-neutral-400 text-sm tracking-wider">
-              {isLogin ? 'Enter your writer studio' : 'Create your author account'}
+              Enter your author credentials
             </p>
           </motion.div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
-            <AnimatePresence mode="wait">
-              {!isLogin && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <div className="relative">
-                    <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" />
-                    <input
-                      type="text"
-                      value={displayName}
-                      onChange={(e) => setDisplayName(e.target.value)}
-                      placeholder="Your Name"
-                      className="w-full pl-12 pr-4 py-4 bg-neutral-900/50 border border-neutral-700 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:border-red-900/50 focus:ring-1 focus:ring-red-900/30 transition-all duration-300"
-                      style={{ fontFamily: 'Georgia, serif' }}
-                    />
-                  </div>
-                  {errors.displayName && (
-                    <p className="text-red-400 text-xs mt-2 ml-1">{errors.displayName}</p>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
-
             <div>
               <div className="relative">
                 <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" />
@@ -298,34 +238,11 @@ const Auth = () => {
                 <Loader2 size={20} className="animate-spin" />
               ) : (
                 <span style={{ fontFamily: 'Georgia, serif' }}>
-                  {isLogin ? 'Enter Studio' : 'Create Account'}
+                  Enter Studio
                 </span>
               )}
             </motion.button>
           </form>
-
-          {/* Toggle */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5, duration: 0.5 }}
-            className="text-center mt-8"
-          >
-            <p className="text-neutral-400 text-sm">
-              {isLogin ? "Don't have an account?" : 'Already have an account?'}
-              <button
-                type="button"
-                onClick={() => {
-                  setIsLogin(!isLogin);
-                  setErrors({});
-                }}
-                className="ml-2 text-red-400 hover:text-red-300 transition-colors underline underline-offset-4"
-                style={{ fontFamily: 'Georgia, serif' }}
-              >
-                {isLogin ? 'Sign Up' : 'Login'}
-              </button>
-            </p>
-          </motion.div>
         </div>
       </motion.div>
 
