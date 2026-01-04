@@ -130,11 +130,9 @@ export const CinematicNavigation = ({ onEnterWorld }: CinematicNavigationProps) 
       }}
     >
       <nav className="flex items-center justify-between max-w-7xl mx-auto">
-        {/* Spacer for symmetry */}
-        <div className="w-[100px] md:w-[140px]" />
-
-        {/* Nav links - Center */}
+        {/* Nav links - Left */}
         <div className="flex items-center gap-1 md:gap-4">
+          <NavItem label="Home" href="/" />
           <NavItem label="Story Posters" href="/stories" />
           <NavItem label="Author" href="/author" />
           <NavItem label="About" href="/about" />
