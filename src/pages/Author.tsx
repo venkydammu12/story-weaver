@@ -47,7 +47,6 @@ const Author = () => {
   const navigate = useNavigate();
   const heroRef = useRef<HTMLDivElement>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [email, setEmail] = useState("dammuvenky40@gmail.com");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -61,31 +60,20 @@ const Author = () => {
   const heroScale = useTransform(heroProgress, [0, 1], [1, 1.1]);
   const heroOpacity = useTransform(heroProgress, [0, 0.8], [1, 0]);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
-    // Only allow the specific author email
-    if (email !== "dammuvenky40@gmail.com") {
-      setError("Access Denied");
-      toast.error("Access Denied");
-      setLoading(false);
-      return;
-    }
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      setError("Access Denied");
-      toast.error("Access Denied");
-    } else {
+    // Check if password matches
+    if (password === "Venkydammu04@") {
       toast.success("Welcome back!");
       setShowLoginModal(false);
+      setPassword("");
       navigate("/write");
+    } else {
+      setError("Access Denied");
+      toast.error("Access Denied");
     }
     setLoading(false);
   };
@@ -250,19 +238,6 @@ const Author = () => {
               <form onSubmit={handleLogin} className="space-y-6">
                 <div className="space-y-2">
                   <label className="text-sm text-neutral-400" style={{ fontFamily: 'Georgia, serif' }}>
-                    Email
-                  </label>
-                  <Input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="bg-black/50 border-neutral-700 text-white placeholder:text-neutral-500 focus:border-red-900/50"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm text-neutral-400" style={{ fontFamily: 'Georgia, serif' }}>
                     Password
                   </label>
                   <Input
@@ -272,6 +247,7 @@ const Author = () => {
                     placeholder="Enter your password"
                     className="bg-black/50 border-neutral-700 text-white placeholder:text-neutral-500 focus:border-red-900/50"
                     required
+                    autoFocus
                   />
                 </div>
 
