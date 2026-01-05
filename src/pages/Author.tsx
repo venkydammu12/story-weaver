@@ -1,9 +1,13 @@
-import { motion, useScroll, useTransform } from 'framer-motion';
-import { useRef } from 'react';
-import { ArrowLeft, PenTool } from 'lucide-react';
+import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import { useRef, useState } from 'react';
+import { ArrowLeft, PenTool, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { CinematicNavigation } from '@/components/CinematicNavigation';
 import { ParallaxImage } from '@/components/ParallaxImage';
+import { supabase } from '@/integrations/supabase/client';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import authorProfile from '@/assets/author-profile.jpeg';
 
 // Import AI-generated images
@@ -42,6 +46,11 @@ const FloatingParticles = () => (
 const Author = () => {
   const navigate = useNavigate();
   const heroRef = useRef<HTMLDivElement>(null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [email, setEmail] = useState("dammuvenky40@gmail.com");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   
   const { scrollYProgress: heroProgress } = useScroll({
     target: heroRef,
@@ -51,6 +60,35 @@ const Author = () => {
   const heroY = useTransform(heroProgress, [0, 1], [0, 150]);
   const heroScale = useTransform(heroProgress, [0, 1], [1, 1.1]);
   const heroOpacity = useTransform(heroProgress, [0, 0.8], [1, 0]);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    // Only allow the specific author email
+    if (email !== "dammuvenky40@gmail.com") {
+      setError("Access Denied");
+      toast.error("Access Denied");
+      setLoading(false);
+      return;
+    }
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      setError("Access Denied");
+      toast.error("Access Denied");
+    } else {
+      toast.success("Welcome back!");
+      setShowLoginModal(false);
+      navigate("/write");
+    }
+    setLoading(false);
+  };
 
   const authorInfo = [
     { label: 'Full Name', value: 'D. Venky' },
@@ -105,7 +143,7 @@ const Author = () => {
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.6, delay: 0.4 }}
-        onClick={() => navigate('/write')}
+        onClick={() => setShowLoginModal(true)}
         className="fixed top-24 right-6 z-40 flex items-center gap-3 group"
       >
         <motion.span 
@@ -161,6 +199,107 @@ const Author = () => {
           }}
         />
       </motion.button>
+
+      {/* Login Modal */}
+      <AnimatePresence>
+        {showLoginModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center px-6"
+            onClick={() => setShowLoginModal(false)}
+          >
+            {/* Backdrop */}
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-md" />
+            
+            {/* Modal */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ duration: 0.3 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-md p-8 rounded-2xl bg-neutral-900/90 border border-red-900/30 backdrop-blur-xl"
+              style={{
+                boxShadow: "0 0 60px hsl(0 70% 20% / 0.4), 0 0 120px hsl(0 70% 15% / 0.2)",
+              }}
+            >
+              {/* Close button */}
+              <button
+                onClick={() => setShowLoginModal(false)}
+                className="absolute top-4 right-4 p-2 rounded-full text-neutral-400 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <X size={20} />
+              </button>
+
+              {/* Header */}
+              <div className="text-center mb-8">
+                <p className="text-red-900/80 text-xs tracking-[0.3em] uppercase mb-2">
+                  Author Access
+                </p>
+                <h2 
+                  className="text-2xl md:text-3xl font-light tracking-[0.1em]"
+                  style={{ fontFamily: 'Georgia, serif' }}
+                >
+                  Writer Studio
+                </h2>
+              </div>
+
+              {/* Login Form */}
+              <form onSubmit={handleLogin} className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-sm text-neutral-400" style={{ fontFamily: 'Georgia, serif' }}>
+                    Email
+                  </label>
+                  <Input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="bg-black/50 border-neutral-700 text-white placeholder:text-neutral-500 focus:border-red-900/50"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm text-neutral-400" style={{ fontFamily: 'Georgia, serif' }}>
+                    Password
+                  </label>
+                  <Input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    className="bg-black/50 border-neutral-700 text-white placeholder:text-neutral-500 focus:border-red-900/50"
+                    required
+                  />
+                </div>
+
+                {error && (
+                  <motion.p
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-red-500 text-sm text-center font-medium"
+                  >
+                    {error}
+                  </motion.p>
+                )}
+
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-red-900/30 border border-red-900/50 hover:bg-red-900/50 text-white transition-all duration-300"
+                  style={{
+                    boxShadow: "0 0 20px hsl(0 70% 25% / 0.3)",
+                  }}
+                >
+                  {loading ? "Signing in..." : "Enter Writer Studio"}
+                </Button>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       
       {/* Hero Section with Author Portrait */}
       <section 
