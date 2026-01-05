@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, Upload, Languages, FileText, Sparkles, X, Check, Loader2,
@@ -6,7 +6,6 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { useAuth } from '@/hooks/useAuth';
 import { useAutoSave, SaveStatus } from '@/hooks/useAutoSave';
 
 type Language = 'english' | 'telugu' | 'hindi';
@@ -102,7 +101,6 @@ const SaveStatusIndicator = ({ status, lastSaved }: { status: SaveStatus; lastSa
 
 const WriterStudio = () => {
   const navigate = useNavigate();
-  const { user, loading, signOut } = useAuth();
   const [content, setContent] = useState('');
   const [title, setTitle] = useState('Untitled Story');
   const [selectedLanguage, setSelectedLanguage] = useState<Language>('english');
@@ -122,13 +120,6 @@ const WriterStudio = () => {
     title,
     language: selectedLanguage,
   });
-
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate('/auth');
-    }
-  }, [user, loading, navigate]);
 
   const transliterate = useCallback((text: string, targetLang: Language): string => {
     if (targetLang === 'english') return text;
@@ -234,25 +225,9 @@ const WriterStudio = () => {
     }
   };
 
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/');
+  const handleExit = () => {
+    navigate('/author');
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="flex flex-col items-center gap-4"
-        >
-          <Loader2 size={40} className="animate-spin text-red-400" />
-          <p className="text-neutral-400 tracking-wider">Loading studio...</p>
-        </motion.div>
-      </div>
-    );
-  }
 
   return (
     <div 
@@ -394,11 +369,11 @@ const WriterStudio = () => {
               </AnimatePresence>
             </div>
 
-            {/* Sign Out */}
+            {/* Exit */}
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={handleSignOut}
+              onClick={handleExit}
               className="p-2 rounded-lg border border-neutral-700 hover:border-red-900/50 hover:bg-red-900/10 transition-all duration-300 text-neutral-400 hover:text-white"
             >
               <LogOut size={18} />
