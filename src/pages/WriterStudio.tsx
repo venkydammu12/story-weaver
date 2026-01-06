@@ -1,12 +1,29 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  ArrowLeft, Languages, Sparkles, X, Loader2,
-  Save, FolderOpen, Send, Check, ChevronDown
+  ArrowLeft, Languages, Sparkles, Loader2,
+  Save, FolderOpen, Send, Check, ChevronDown,
+  FileText, Clock, Trash2, Edit3, X
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useDrafts, Draft } from '@/hooks/useDrafts';
+
+// Format relative time helper
+const formatRelativeTime = (dateString: string) => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString();
+};
 
 type Language = 'english' | 'telugu' | 'hindi';
 
@@ -45,7 +62,7 @@ const SaveStatusIndicator = ({ status, lastSaved }: { status: 'idle' | 'saving' 
 const WriterStudio = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { autoSaveDraft, deleteDraft } = useDrafts();
+  const { drafts, autoSaveDraft, deleteDraft } = useDrafts();
   
   // Load draft from navigation state if present
   const initialDraft = location.state?.draft as Draft | undefined;
@@ -60,6 +77,10 @@ const WriterStudio = () => {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [showPublishDialog, setShowPublishDialog] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [showDraftsPanel, setShowDraftsPanel] = useState(false);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [saveTitleInput, setSaveTitleInput] = useState('');
+  const [deletingDraftId, setDeletingDraftId] = useState<string | null>(null);
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -196,24 +217,55 @@ const WriterStudio = () => {
     }
   }, [content, title, selectedLanguage, currentDraftId, deleteDraft, navigate]);
 
-  // Manual save
-  const handleManualSave = useCallback(() => {
+  // Open save dialog for manual save
+  const handleOpenSaveDialog = useCallback(() => {
     if (!content.trim()) {
       toast.error('Nothing to save');
       return;
     }
+    setSaveTitleInput(title === 'Untitled Story' ? '' : title);
+    setShowSaveDialog(true);
+  }, [content, title]);
+
+  // Manual save with title
+  const handleManualSave = useCallback(() => {
+    const finalTitle = saveTitleInput.trim() || 'Untitled Story';
     
     setSaveStatus('saving');
-    const newId = autoSaveDraft(currentDraftId, title, content, selectedLanguage);
+    setTitle(finalTitle);
+    const newId = autoSaveDraft(currentDraftId, finalTitle, content, selectedLanguage);
     if (newId && !currentDraftId) {
       setCurrentDraftId(newId);
     }
     setSaveStatus('saved');
     setLastSaved(new Date());
-    toast.success('Draft saved');
+    setShowSaveDialog(false);
+    toast.success('Saved to Drafts');
     
     setTimeout(() => setSaveStatus('idle'), 2000);
-  }, [content, title, selectedLanguage, currentDraftId, autoSaveDraft]);
+  }, [content, saveTitleInput, selectedLanguage, currentDraftId, autoSaveDraft]);
+
+  // Open a draft for editing
+  const handleOpenDraft = useCallback((draft: Draft) => {
+    setContent(draft.content);
+    setTitle(draft.title);
+    setCurrentDraftId(draft.id);
+    setSelectedLanguage((draft.language as Language) || 'english');
+    setShowDraftsPanel(false);
+    toast.success('Draft opened');
+  }, []);
+
+  // Delete a draft
+  const handleDeleteDraft = useCallback((id: string) => {
+    deleteDraft(id);
+    setDeletingDraftId(null);
+    if (currentDraftId === id) {
+      setCurrentDraftId(null);
+      setContent('');
+      setTitle('Untitled Story');
+    }
+    toast.success('Draft deleted');
+  }, [deleteDraft, currentDraftId]);
 
   const wordCount = content.split(/\s+/).filter(Boolean).length;
 
@@ -286,10 +338,15 @@ const WriterStudio = () => {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => navigate('/drafts')}
-            className="p-2 rounded-full border border-neutral-700 hover:border-red-900/50 hover:bg-red-900/10 transition-all duration-300 text-neutral-400 hover:text-white"
+            onClick={() => setShowDraftsPanel(true)}
+            className="relative p-2 rounded-full border border-neutral-700 hover:border-red-900/50 hover:bg-red-900/10 transition-all duration-300 text-neutral-400 hover:text-white"
           >
             <FolderOpen size={18} />
+            {drafts.length > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-900 text-[10px] rounded-full flex items-center justify-center text-red-200">
+                {drafts.length}
+              </span>
+            )}
           </motion.button>
         </div>
       </motion.header>
@@ -441,7 +498,7 @@ const WriterStudio = () => {
               <motion.button
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
-                onClick={handleManualSave}
+                onClick={handleOpenSaveDialog}
                 disabled={!content.trim()}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg border border-neutral-600 text-neutral-300 hover:bg-neutral-800 transition-all duration-300 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
               >
@@ -538,6 +595,263 @@ const WriterStudio = () => {
                     )}
                   </motion.button>
                 </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Save Draft Dialog */}
+      <AnimatePresence>
+        {showSaveDialog && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/70 z-50"
+              onClick={() => setShowSaveDialog(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md mx-4"
+            >
+              <div 
+                className="p-6 rounded-xl"
+                style={{
+                  background: 'linear-gradient(145deg, hsl(0 0% 10%) 0%, hsl(0 0% 6%) 100%)',
+                  border: '1px solid hsl(0 0% 15%)',
+                  boxShadow: '0 30px 80px -20px hsl(0 0% 0% / 0.9)',
+                }}
+              >
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.1, type: 'spring' }}
+                  className="w-14 h-14 mx-auto mb-4 rounded-full bg-red-900/30 border border-red-900/40 flex items-center justify-center"
+                >
+                  <Save size={24} className="text-red-400" />
+                </motion.div>
+                
+                <h3 
+                  className="text-xl mb-2 text-center"
+                  style={{ fontFamily: 'Georgia, serif' }}
+                >
+                  Save to Drafts
+                </h3>
+                <p className="text-neutral-400 text-sm mb-5 text-center">
+                  Give your story a title
+                </p>
+                
+                <input
+                  type="text"
+                  value={saveTitleInput}
+                  onChange={(e) => setSaveTitleInput(e.target.value)}
+                  placeholder="Story title..."
+                  className="w-full px-4 py-3 rounded-lg bg-neutral-900 border border-neutral-700 text-white placeholder-neutral-500 focus:outline-none focus:border-red-900/50 mb-5"
+                  style={{ fontFamily: 'Georgia, serif' }}
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleManualSave();
+                  }}
+                />
+                
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowSaveDialog(false)}
+                    className="flex-1 py-3 border border-neutral-700 rounded-lg text-neutral-300 hover:bg-neutral-800 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleManualSave}
+                    className="flex-1 py-3 bg-red-900/40 border border-red-900/50 rounded-lg text-red-300 hover:bg-red-900/60 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Check size={16} />
+                    Save Draft
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Drafts Side Panel */}
+      <AnimatePresence>
+        {showDraftsPanel && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 z-50"
+              onClick={() => setShowDraftsPanel(false)}
+            />
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="fixed right-0 top-0 bottom-0 w-full max-w-sm z-50 overflow-hidden"
+              style={{
+                background: 'linear-gradient(180deg, hsl(0 0% 6%) 0%, hsl(0 0% 4%) 100%)',
+                borderLeft: '1px solid hsl(0 0% 12%)',
+              }}
+            >
+              {/* Panel Header */}
+              <div className="p-5 border-b border-neutral-800 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-red-900/20 border border-red-900/30">
+                    <FolderOpen size={18} className="text-red-400" />
+                  </div>
+                  <h2 
+                    className="text-lg"
+                    style={{ fontFamily: 'Georgia, serif' }}
+                  >
+                    Drafts
+                  </h2>
+                  {drafts.length > 0 && (
+                    <span className="text-xs text-neutral-500">({drafts.length})</span>
+                  )}
+                </div>
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setShowDraftsPanel(false)}
+                  className="p-2 rounded-lg hover:bg-neutral-800 transition-colors text-neutral-400 hover:text-white"
+                >
+                  <X size={18} />
+                </motion.button>
+              </div>
+
+              {/* Drafts List */}
+              <div className="overflow-y-auto h-[calc(100vh-80px)] p-4">
+                {drafts.length === 0 ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-center py-16"
+                  >
+                    <FileText size={40} className="mx-auto text-neutral-700 mb-3" />
+                    <p className="text-neutral-500 text-sm mb-1">No drafts yet</p>
+                    <p className="text-neutral-600 text-xs">Your saved stories will appear here</p>
+                  </motion.div>
+                ) : (
+                  <div className="space-y-3">
+                    {drafts.map((draft, index) => (
+                      <motion.div
+                        key={draft.id}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="group relative"
+                      >
+                        <motion.div
+                          whileHover={{ scale: 1.02, x: -4 }}
+                          className="p-4 rounded-xl cursor-pointer transition-all duration-300"
+                          style={{
+                            background: currentDraftId === draft.id 
+                              ? 'linear-gradient(145deg, hsl(350 30% 12%) 0%, hsl(350 20% 8%) 100%)'
+                              : 'linear-gradient(145deg, hsl(0 0% 9%) 0%, hsl(0 0% 6%) 100%)',
+                            border: currentDraftId === draft.id 
+                              ? '1px solid hsl(350 40% 25%)'
+                              : '1px solid hsl(0 0% 14%)',
+                          }}
+                          onClick={() => handleOpenDraft(draft)}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              <h4 
+                                className="text-sm text-white font-medium truncate mb-1"
+                                style={{ fontFamily: 'Georgia, serif' }}
+                              >
+                                {draft.title}
+                              </h4>
+                              <div className="flex items-center gap-2 text-xs text-neutral-500">
+                                <Clock size={11} />
+                                <span>{formatRelativeTime(draft.lastEdited)}</span>
+                                <span className="text-neutral-700">•</span>
+                                <span>{draft.wordCount} words</span>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <motion.button
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenDraft(draft);
+                                }}
+                                className="p-1.5 rounded-lg hover:bg-neutral-700 transition-colors text-neutral-400 hover:text-white"
+                              >
+                                <Edit3 size={14} />
+                              </motion.button>
+                              <motion.button
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDeletingDraftId(draft.id);
+                                }}
+                                className="p-1.5 rounded-lg hover:bg-red-900/30 transition-colors text-neutral-400 hover:text-red-400"
+                              >
+                                <Trash2 size={14} />
+                              </motion.button>
+                            </div>
+                          </div>
+                          
+                          <p className="text-xs text-neutral-500 mt-2 line-clamp-2">
+                            {draft.content.substring(0, 100)}
+                            {draft.content.length > 100 && '...'}
+                          </p>
+                        </motion.div>
+
+                        {/* Delete Confirmation Overlay */}
+                        <AnimatePresence>
+                          {deletingDraftId === draft.id && (
+                            <motion.div
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                              className="absolute inset-0 flex items-center justify-center rounded-xl z-10"
+                              style={{ background: 'hsl(0 0% 5% / 0.95)' }}
+                            >
+                              <div className="text-center p-3">
+                                <p className="text-white text-sm mb-3">Delete draft?</p>
+                                <div className="flex gap-2 justify-center">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setDeletingDraftId(null);
+                                    }}
+                                    className="px-3 py-1.5 text-xs border border-neutral-600 rounded-lg hover:bg-neutral-800 transition-colors"
+                                  >
+                                    Cancel
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteDraft(draft.id);
+                                    }}
+                                    className="px-3 py-1.5 text-xs bg-red-900/50 border border-red-900 rounded-lg text-red-300 hover:bg-red-900/70 transition-colors"
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
               </div>
             </motion.div>
           </>
