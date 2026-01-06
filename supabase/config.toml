@@ -1,1 +1,7 @@
 project_id = "hkxfchesvijkoxgvwccy"
+
+[functions.convert-language]
+verify_jwt = false
+
+[functions.publish-story]
+verify_jwt = false
