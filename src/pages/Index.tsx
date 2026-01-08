@@ -113,7 +113,7 @@ const Index = () => {
           </motion.div>
         )}
 
-        {currentView === "story" && (
+        {currentView === "story" && selectedStory && (
           <motion.div
             key="story"
             initial={{ opacity: 0 }}
@@ -121,7 +121,7 @@ const Index = () => {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <StoryReader onBack={handleBackToWorld} />
+            <StoryReader storyId={selectedStory} onBack={handleBackToWorld} />
           </motion.div>
         )}
       </AnimatePresence>
