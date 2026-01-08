@@ -26,33 +26,14 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Create a system user ID for published stories (author without login)
-    const authorUserId = "00000000-0000-0000-0000-000000000001";
-
-    // Check if author profile exists, create if not
-    const { data: existingProfile } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("user_id", authorUserId)
-      .single();
-
-    if (!existingProfile) {
-      await supabase.from("profiles").insert({
-        user_id: authorUserId,
-        display_name: "Author",
-        email: "author@stories.app",
-        is_author: true,
-      });
-    }
-
     // Calculate word count
     const wordCount = content.split(/\s+/).filter(Boolean).length;
 
-    // Insert the published story
+    // Insert the published story (user_id is null for system-published stories)
     const { data, error } = await supabase
       .from("stories")
       .insert({
-        user_id: authorUserId,
+        user_id: null,
         title,
         content,
         language: language || "english",

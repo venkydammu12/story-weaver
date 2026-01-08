@@ -53,7 +53,7 @@ export type Database = {
           language: string | null
           title: string
           updated_at: string
-          user_id: string
+          user_id: string | null
           word_count: number | null
         }
         Insert: {
@@ -64,7 +64,7 @@ export type Database = {
           language?: string | null
           title?: string
           updated_at?: string
-          user_id: string
+          user_id?: string | null
           word_count?: number | null
         }
         Update: {
@@ -75,7 +75,7 @@ export type Database = {
           language?: string | null
           title?: string
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
           word_count?: number | null
         }
         Relationships: []
