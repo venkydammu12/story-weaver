@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { CinematicIntro } from "@/components/CinematicIntro";
 import { CinematicNavigation } from "@/components/CinematicNavigation";
@@ -33,8 +34,18 @@ const storyContent = [
 ];
 
 const Index = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [currentView, setCurrentView] = useState<View>("landing");
   const [selectedStory, setSelectedStory] = useState<string | null>(null);
+
+  // Handle query param for entering world from other pages
+  useEffect(() => {
+    if (searchParams.get("view") === "world") {
+      setCurrentView("world");
+      // Clear the query param
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
 
   const handleEnterWorld = () => {
     setCurrentView("world");

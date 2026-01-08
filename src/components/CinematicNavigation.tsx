@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 
 interface CinematicNavigationProps {
   onEnterWorld?: () => void;
@@ -113,6 +114,19 @@ const NavItem = ({ label, href = "/" }: { label: string; href?: string }) => {
 };
 
 export const CinematicNavigation = ({ onEnterWorld }: CinematicNavigationProps) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleEnterWorld = () => {
+    // If we're on the landing page and have a callback, use it
+    if (location.pathname === "/" && onEnterWorld) {
+      onEnterWorld();
+    } else {
+      // Otherwise navigate to home with a query param to trigger world view
+      navigate("/?view=world");
+    }
+  };
+
   return (
     <motion.header
       initial={{ opacity: 0, y: -20 }}
@@ -143,7 +157,7 @@ export const CinematicNavigation = ({ onEnterWorld }: CinematicNavigationProps) 
 
         {/* Enter World - Right */}
         <motion.button
-          onClick={onEnterWorld}
+          onClick={handleEnterWorld}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.98 }}
           className="relative px-4 py-2 md:px-6 md:py-2.5 text-xs md:text-sm font-medium tracking-wider text-white overflow-hidden rounded-full"
