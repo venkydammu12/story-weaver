@@ -1,74 +1,15 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Headphones, BookOpen, Languages, X } from "lucide-react";
+import { ArrowLeft, Headphones, Languages, X, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface StoryReaderProps {
+  storyId?: string;
   onBack?: () => void;
 }
 
 type Language = "english" | "telugu" | "hindi";
-
-const storyContent: Record<Language, {
-  title: string;
-  author: string;
-  chapters: {
-    title: string;
-    subtitle: string;
-    paragraphs: string[];
-  }[];
-}> = {
-  english: {
-    title: "The Last Light of Hyderabad",
-    author: "Raghav Krishna",
-    chapters: [
-      {
-        title: "Chapter One",
-        subtitle: "The Beginning of Dusk",
-        paragraphs: [
-          "The ancient stones of the Charminar stood silent as the sun began its descent, painting the sky in shades of amber and deep crimson. Arjun watched from the rooftop of his family's haveli, the city spread before him like a tapestry woven with centuries of stories.",
-          "He had always loved this hour—the moment when day surrendered to night, when the call to prayer echoed across the old city and the lights began to flicker on like earthbound stars. But tonight, something felt different. A weight hung in the air, heavy with secrets yet to be revealed.",
-          "His grandmother had spoken of such nights. Nights when the veil between past and present grew thin, when the ghosts of the Nizam's court still walked the marble halls of the Falaknuma Palace. Arjun had dismissed her tales as the fancies of an aging mind, but now, watching the shadows lengthen across the Musi river, he wasn't so certain.",
-          "The letter had arrived that morning—yellowed paper sealed with wax bearing an insignia he didn't recognize. Inside, a single line written in elegant Urdu script: 'The keeper of secrets awaits the heir at the hour of the last light.'",
-          "Arjun traced the words again, feeling the slight indentation of the pen strokes beneath his fingertips. Someone knew. Someone remembered what his family had worked so hard to forget.",
-        ],
-      },
-    ],
-  },
-  telugu: {
-    title: "హైదరాబాద్ చివరి వెలుగు",
-    author: "రాఘవ్ కృష్ణ",
-    chapters: [
-      {
-        title: "మొదటి అధ్యాయం",
-        subtitle: "సంధ్య ప్రారంభం",
-        paragraphs: [
-          "సూర్యుడు అస్తమించడం ప్రారంభించగా, చార్మినార్ పురాతన రాళ్ళు నిశ్శబ్దంగా నిలబడ్డాయి, ఆకాశాన్ని పసుపు మరియు ముదురు ఎరుపు రంగుల్లో చిత్రీకరించాయి. అర్జున్ తన కుటుంబం హవేలీ పైకప్పు నుండి చూస్తూ, శతాబ్దాల కథలతో అల్లిన వస్త్రంలా నగరం అతని ముందు విస్తరించింది.",
-          "అతను ఎల్లప్పుడూ ఈ సమయాన్ని ప్రేమించాడు—పగలు రాత్రికి లొంగిపోయే క్షణం, పాత నగరం అంతటా ప్రార్థన పిలుపు ప్రతిధ్వనించినప్పుడు మరియు భూమిపై నక్షత్రాలలా దీపాలు మెరవడం ప్రారంభించినప్పుడు. కానీ ఈ రాత్రి, ఏదో భిన్నంగా అనిపించింది. ఇంకా వెల్లడికాని రహస్యాలతో బరువుగా గాలిలో ఏదో వ్రేలాడుతోంది.",
-          "అతని నానమ్మ అలాంటి రాత్రుల గురించి చెప్పేది. గతం మరియు వర్తమానం మధ్య తెర సన్నబడిన రాత్రులు, నిజాం దర్బారు దయ్యాలు ఇప్పటికీ ఫలక్‌నుమా ప్యాలెస్ పాలరాయి హాళ్ళలో నడిచేవి. అర్జున్ ఆమె కథలను వృద్ధాప్య మనసు ఊహలుగా కొట్టిపారేశాడు, కానీ ఇప్పుడు, మూసీ నది మీదుగా నీడలు పొడవుగా మారడం చూస్తూ, అతనికి అంత నిశ్చయంగా లేదు.",
-          "ఉత్తరం ఆ ఉదయం వచ్చింది—అతనికి గుర్తు లేని ముద్రతో మైనంతో సీల్ చేయబడిన పసుపు కాగితం. లోపల, అందమైన ఉర్దూ లిపిలో వ్రాయబడిన ఒక్క వాక్యం: 'చివరి వెలుగు సమయంలో వారసుడి కోసం రహస్యాల సంరక్షకుడు వేచి ఉన్నాడు.'",
-          "అర్జున్ మళ్ళీ పదాలను గీస్తూ, తన వేళ్ల కింద పెన్ స్ట్రోక్‌ల స్వల్ప ఇండెంటేషన్‌ను అనుభవించాడు. ఎవరో తెలుసు. అతని కుటుంబం మర్చిపోవడానికి చాలా కష్టపడింది దాన్ని ఎవరో గుర్తుంచుకున్నారు.",
-        ],
-      },
-    ],
-  },
-  hindi: {
-    title: "हैदराबाद की आखिरी रोशनी",
-    author: "राघव कृष्णा",
-    chapters: [
-      {
-        title: "पहला अध्याय",
-        subtitle: "शाम की शुरुआत",
-        paragraphs: [
-          "चारमीनार के प्राचीन पत्थर खामोश खड़े थे जब सूरज ढलने लगा, आसमान को सुनहरे और गहरे लाल रंगों में रंगता हुआ। अर्जुन अपने परिवार की हवेली की छत से देख रहा था, शहर उसके सामने सदियों की कहानियों से बुनी एक तस्वीर की तरह फैला हुआ था।",
-          "उसे हमेशा इस घड़ी से प्यार था—वह पल जब दिन रात के सामने झुक जाता, जब पुराने शहर में अजान गूंजती और रोशनियां धरती के तारों की तरह टिमटिमाने लगतीं। लेकिन आज रात, कुछ अलग लग रहा था। हवा में एक भारीपन था, अभी तक न खुले रहस्यों से भरा।",
-          "उसकी दादी ऐसी रातों के बारे में बताती थीं। वो रातें जब अतीत और वर्तमान के बीच का पर्दा पतला हो जाता था, जब निज़ाम के दरबार के भूत अभी भी फलकनुमा पैलेस के संगमरमर के गलियारों में चलते थे। अर्जुन ने उनकी कहानियों को बुढ़ापे की कल्पना मानकर खारिज कर दिया था, लेकिन अब, मूसी नदी पर छायाएं लंबी होती देखते हुए, उसे इतना यकीन नहीं था।",
-          "पत्र उस सुबह आया था—पीला कागज़ जिस पर एक ऐसी मुहर लगी थी जिसे वह नहीं पहचानता था। अंदर, सुंदर उर्दू लिपि में लिखी एक पंक्ति: 'रहस्यों का रक्षक आखिरी रोशनी के समय वारिस की प्रतीक्षा कर रहा है।'",
-          "अर्जुन ने फिर से शब्दों पर उंगली फेरी, अपनी उंगलियों के नीचे कलम के निशानों को महसूस करते हुए। कोई जानता था। कोई याद रखता था जिसे उसके परिवार ने भुलाने की बहुत कोशिश की थी।",
-        ],
-      },
-    ],
-  },
-};
 
 const languageLabels: Record<Language, string> = {
   english: "English",
@@ -76,14 +17,29 @@ const languageLabels: Record<Language, string> = {
   hindi: "हिंदी",
 };
 
-export const StoryReader = ({ onBack }: StoryReaderProps) => {
+export const StoryReader = ({ storyId, onBack }: StoryReaderProps) => {
   const [showLanguagePanel, setShowLanguagePanel] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [currentLine, setCurrentLine] = useState<number | null>(null);
   const [selectedLanguage, setSelectedLanguage] = useState<Language>("english");
   const [isTransitioning, setIsTransitioning] = useState(false);
 
-  const currentStory = storyContent[selectedLanguage];
+  // Fetch story from database
+  const { data: story, isLoading } = useQuery({
+    queryKey: ["story", storyId],
+    queryFn: async () => {
+      if (!storyId) return null;
+      const { data, error } = await supabase
+        .from("stories")
+        .select("*")
+        .eq("id", storyId)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!storyId,
+  });
 
   const handleLanguageChange = (language: Language) => {
     if (language === selectedLanguage) {
@@ -98,6 +54,28 @@ export const StoryReader = ({ onBack }: StoryReaderProps) => {
       setShowLanguagePanel(false);
     }, 300);
   };
+
+  // Split content into paragraphs
+  const paragraphs = story?.content?.split('\n').filter(p => p.trim()) || [];
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!story) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+        <p className="text-muted-foreground">Story not found</p>
+        <button onClick={onBack} className="text-primary hover:underline">
+          Go back
+        </button>
+      </div>
+    );
+  }
 
   return (
     <motion.div
@@ -145,50 +123,38 @@ export const StoryReader = ({ onBack }: StoryReaderProps) => {
           className="mb-16 md:mb-24 text-center"
         >
           <p className="text-primary/70 spacing-cinematic text-xs uppercase mb-4">
-            {currentStory.author}
+            Author
           </p>
           <h1 className="font-display text-3xl md:text-5xl text-foreground mb-8">
-            {currentStory.title}
+            {story.title}
           </h1>
           <div className="w-16 h-px bg-primary/30 mx-auto" />
         </motion.header>
 
-        {/* Chapter */}
-        {currentStory.chapters.map((chapter, chapterIndex) => (
-          <motion.section
-            key={`${selectedLanguage}-${chapterIndex}`}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
-          >
-            <div className="mb-12">
-              <p className="text-muted-foreground spacing-cinematic text-xs uppercase mb-2">
-                {chapter.title}
-              </p>
-              <h2 className="font-display text-xl md:text-2xl text-foreground italic">
-                {chapter.subtitle}
-              </h2>
-            </div>
-
-            <div className="space-y-6">
-              {chapter.paragraphs.map((paragraph, pIndex) => (
-                <motion.p
-                  key={`${selectedLanguage}-${pIndex}`}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.8 + pIndex * 0.1 }}
-                  className={`text-foreground/90 leading-[1.9] text-lg font-body transition-all duration-500 ${
-                    currentLine === pIndex
-                      ? "text-foreground bg-primary/5 -mx-4 px-4 py-2 rounded border-l-2 border-primary/40"
-                      : ""
-                  }`}
-                >
-                  {paragraph}
-                </motion.p>
-              ))}
-            </div>
-          </motion.section>
-        ))}
+        {/* Story paragraphs */}
+        <motion.section
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6 }}
+        >
+          <div className="space-y-6">
+            {paragraphs.map((paragraph, pIndex) => (
+              <motion.p
+                key={pIndex}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.8 + pIndex * 0.05 }}
+                className={`text-foreground/90 leading-[1.9] text-lg font-body transition-all duration-500 ${
+                  currentLine === pIndex
+                    ? "text-foreground bg-primary/5 -mx-4 px-4 py-2 rounded border-l-2 border-primary/40"
+                    : ""
+                }`}
+              >
+                {paragraph}
+              </motion.p>
+            ))}
+          </div>
+        </motion.section>
       </motion.article>
 
       {/* Floating control panel */}
