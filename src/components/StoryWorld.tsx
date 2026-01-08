@@ -1,58 +1,36 @@
 import { motion } from "framer-motion";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { StoryCard } from "./StoryCard";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface StoryWorldProps {
   onStorySelect?: (storyId: string) => void;
   onBack?: () => void;
 }
 
-const stories = [
-  {
-    id: "1",
-    title: "The Last Light of Hyderabad",
-    author: "Raghav Krishna",
-    genre: "Drama",
-    duration: "25 min read",
-  },
-  {
-    id: "2",
-    title: "Whispers in the Godavari",
-    author: "Anjali Reddy",
-    genre: "Romance",
-    duration: "18 min read",
-  },
-  {
-    id: "3",
-    title: "The Tiger's Shadow",
-    author: "Vikram Rao",
-    genre: "Thriller",
-    duration: "32 min read",
-  },
-  {
-    id: "4",
-    title: "Songs of the Forgotten Temple",
-    author: "Priya Devi",
-    genre: "Mystery",
-    duration: "22 min read",
-  },
-  {
-    id: "5",
-    title: "Between Two Monsoons",
-    author: "Kiran Varma",
-    genre: "Drama",
-    duration: "28 min read",
-  },
-  {
-    id: "6",
-    title: "The Emperor's Final Dawn",
-    author: "Arjun Naidu",
-    genre: "Historical",
-    duration: "35 min read",
-  },
-];
-
 export const StoryWorld = ({ onStorySelect, onBack }: StoryWorldProps) => {
+  // Fetch published stories from database
+  const { data: stories = [], isLoading } = useQuery({
+    queryKey: ["published-stories"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("stories")
+        .select("id, title, content, language, word_count, created_at")
+        .eq("is_published", true)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data.map((story) => ({
+        id: story.id,
+        title: story.title,
+        author: "Author",
+        genre: "Story",
+        duration: `${Math.ceil((story.word_count || 0) / 200)} min read`,
+      }));
+    },
+  });
+
   return (
     <motion.section
       initial={{ opacity: 0 }}
@@ -96,20 +74,41 @@ export const StoryWorld = ({ onStorySelect, onBack }: StoryWorldProps) => {
           </h2>
         </motion.div>
 
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!isLoading && stories.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-20"
+          >
+            <p className="text-muted-foreground text-lg">No published stories yet.</p>
+            <p className="text-muted-foreground/60 text-sm mt-2">Be the first to publish a story!</p>
+          </motion.div>
+        )}
+
         {/* Stories Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-          {stories.map((story, index) => (
-            <StoryCard
-              key={story.id}
-              title={story.title}
-              author={story.author}
-              genre={story.genre}
-              duration={story.duration}
-              index={index}
-              onClick={() => onStorySelect?.(story.id)}
-            />
-          ))}
-        </div>
+        {!isLoading && stories.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+            {stories.map((story, index) => (
+              <StoryCard
+                key={story.id}
+                title={story.title}
+                author={story.author}
+                genre={story.genre}
+                duration={story.duration}
+                index={index}
+                onClick={() => onStorySelect?.(story.id)}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </motion.section>
   );
