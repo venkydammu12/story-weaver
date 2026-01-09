@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, Languages, Sparkles, Loader2,
   Save, FolderOpen, Send, Check, ChevronDown,
-  FileText, Clock, Trash2, Edit3, X
+  FileText, Clock, Trash2, Edit3, X, Copy
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -33,28 +33,38 @@ const languageLabels: Record<Language, string> = {
   hindi: 'हिंदी'
 };
 
-const SaveStatusIndicator = ({ status, lastSaved }: { status: 'idle' | 'saving' | 'saved'; lastSaved: Date | null }) => {
-  if (status === 'idle' && !lastSaved) return null;
+type SaveStatus = 'idle' | 'saving' | 'saved';
 
+const SaveStatusIndicator = ({ status, lastSaved, draftId }: { 
+  status: SaveStatus; 
+  lastSaved: Date | null;
+  draftId: string | null;
+}) => {
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className={`flex items-center gap-2 text-xs tracking-wider ${
-        status === 'saved' ? 'text-green-400/70' : 'text-neutral-500'
-      }`}
+      className="flex items-center gap-2 text-xs tracking-wider"
     >
       {status === 'saving' ? (
-        <>
+        <span className="flex items-center gap-1.5 text-neutral-400">
           <Loader2 size={12} className="animate-spin" />
           <span>Saving...</span>
-        </>
+        </span>
       ) : status === 'saved' ? (
-        <>
+        <motion.span 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex items-center gap-1.5 text-green-400/80"
+        >
           <Check size={12} />
-          <span>Saved</span>
-        </>
-      ) : null}
+          <span>Draft • Saved</span>
+        </motion.span>
+      ) : draftId ? (
+        <span className="text-neutral-500">Draft</span>
+      ) : (
+        <span className="text-neutral-600">New Story</span>
+      )}
     </motion.div>
   );
 };
@@ -62,18 +72,18 @@ const SaveStatusIndicator = ({ status, lastSaved }: { status: 'idle' | 'saving' 
 const WriterStudio = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { drafts, autoSaveDraft, deleteDraft } = useDrafts();
+  const { drafts, saveDraft, deleteDraft, draftExists, duplicateDraft } = useDrafts();
   
   // Load draft from navigation state if present
   const initialDraft = location.state?.draft as Draft | undefined;
   
   const [content, setContent] = useState(initialDraft?.content || '');
-  const [title, setTitle] = useState(initialDraft?.title || 'Untitled Story');
+  const [title, setTitle] = useState(initialDraft?.title || '');
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(initialDraft?.id || null);
   const [selectedLanguage, setSelectedLanguage] = useState<Language>((initialDraft?.language as Language) || 'english');
   const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [showPublishDialog, setShowPublishDialog] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
@@ -84,25 +94,39 @@ const WriterStudio = () => {
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const currentDraftIdRef = useRef<string | null>(currentDraftId);
 
-  // Auto-save to localStorage
+  // Keep ref in sync
   useEffect(() => {
-    if (!content.trim() && !title.trim()) return;
+    currentDraftIdRef.current = currentDraftId;
+  }, [currentDraftId]);
+
+  // Auto-save logic - only saves if we have an existing draft ID
+  useEffect(() => {
+    if (!content.trim()) return;
+    if (!currentDraftId) return; // Don't auto-save if no draft exists yet
     
     if (autoSaveTimeoutRef.current) {
       clearTimeout(autoSaveTimeoutRef.current);
     }
 
     autoSaveTimeoutRef.current = setTimeout(() => {
-      setSaveStatus('saving');
-      const newId = autoSaveDraft(currentDraftId, title, content, selectedLanguage);
-      if (newId && !currentDraftId) {
-        setCurrentDraftId(newId);
+      // Double-check we still have the same draft ID
+      if (currentDraftIdRef.current && draftExists(currentDraftIdRef.current)) {
+        setSaveStatus('saving');
+        
+        saveDraft(
+          currentDraftIdRef.current, 
+          title || 'Untitled Story', 
+          content, 
+          selectedLanguage
+        );
+        
+        setSaveStatus('saved');
+        setLastSaved(new Date());
+        
+        setTimeout(() => setSaveStatus('idle'), 2000);
       }
-      setSaveStatus('saved');
-      setLastSaved(new Date());
-      
-      setTimeout(() => setSaveStatus('idle'), 2000);
     }, 1500);
 
     return () => {
@@ -110,7 +134,7 @@ const WriterStudio = () => {
         clearTimeout(autoSaveTimeoutRef.current);
       }
     };
-  }, [content, title, selectedLanguage, currentDraftId, autoSaveDraft]);
+  }, [content, title, selectedLanguage, currentDraftId, saveDraft, draftExists]);
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setContent(e.target.value);
@@ -168,7 +192,7 @@ const WriterStudio = () => {
       toast.error('Please write some content first');
       return;
     }
-    if (!title.trim() || title === 'Untitled Story') {
+    if (!title.trim()) {
       toast.error('Please give your story a title');
       return;
     }
@@ -217,42 +241,90 @@ const WriterStudio = () => {
     }
   }, [content, title, selectedLanguage, currentDraftId, deleteDraft, navigate]);
 
-  // Open save dialog for manual save
-  const handleOpenSaveDialog = useCallback(() => {
+  // Open save dialog for manual save (only when no draft exists or changing title)
+  const handleSaveClick = useCallback(() => {
     if (!content.trim()) {
       toast.error('Nothing to save');
       return;
     }
-    setSaveTitleInput(title === 'Untitled Story' ? '' : title);
-    setShowSaveDialog(true);
-  }, [content, title]);
 
-  // Manual save with title
-  const handleManualSave = useCallback(() => {
+    // If draft already exists, just save directly
+    if (currentDraftId && draftExists(currentDraftId)) {
+      setSaveStatus('saving');
+      saveDraft(currentDraftId, title || 'Untitled Story', content, selectedLanguage);
+      setSaveStatus('saved');
+      setLastSaved(new Date());
+      toast.success('Draft saved');
+      setTimeout(() => setSaveStatus('idle'), 2000);
+      return;
+    }
+
+    // No draft exists - show dialog to get title
+    setSaveTitleInput(title || '');
+    setShowSaveDialog(true);
+  }, [content, title, currentDraftId, draftExists, saveDraft, selectedLanguage]);
+
+  // Create new draft with title from dialog
+  const handleCreateDraft = useCallback(() => {
     const finalTitle = saveTitleInput.trim() || 'Untitled Story';
     
     setSaveStatus('saving');
     setTitle(finalTitle);
-    const newId = autoSaveDraft(currentDraftId, finalTitle, content, selectedLanguage);
-    if (newId && !currentDraftId) {
-      setCurrentDraftId(newId);
-    }
+    
+    // Create new draft and get the ID
+    const newId = saveDraft(null, finalTitle, content, selectedLanguage);
+    setCurrentDraftId(newId);
+    currentDraftIdRef.current = newId;
+    
     setSaveStatus('saved');
     setLastSaved(new Date());
     setShowSaveDialog(false);
-    toast.success('Saved to Drafts');
+    toast.success('Draft created');
     
     setTimeout(() => setSaveStatus('idle'), 2000);
-  }, [content, saveTitleInput, selectedLanguage, currentDraftId, autoSaveDraft]);
+  }, [content, saveTitleInput, selectedLanguage, saveDraft]);
+
+  // Save as new draft (duplicate)
+  const handleSaveAsNew = useCallback(() => {
+    if (!content.trim()) {
+      toast.error('Nothing to save');
+      return;
+    }
+
+    const newTitle = title ? `${title} (Copy)` : 'Untitled Story';
+    const newId = saveDraft(null, newTitle, content, selectedLanguage);
+    
+    setCurrentDraftId(newId);
+    currentDraftIdRef.current = newId;
+    setTitle(newTitle);
+    
+    toast.success('Saved as new draft');
+  }, [content, title, selectedLanguage, saveDraft]);
 
   // Open a draft for editing
   const handleOpenDraft = useCallback((draft: Draft) => {
     setContent(draft.content);
     setTitle(draft.title);
     setCurrentDraftId(draft.id);
+    currentDraftIdRef.current = draft.id;
     setSelectedLanguage((draft.language as Language) || 'english');
     setShowDraftsPanel(false);
+    setSaveStatus('idle');
+    setLastSaved(null);
     toast.success('Draft opened');
+  }, []);
+
+  // Start a new story (clear editor)
+  const handleNewStory = useCallback(() => {
+    setContent('');
+    setTitle('');
+    setCurrentDraftId(null);
+    currentDraftIdRef.current = null;
+    setSelectedLanguage('english');
+    setSaveStatus('idle');
+    setLastSaved(null);
+    setShowDraftsPanel(false);
+    toast.success('New story started');
   }, []);
 
   // Delete a draft
@@ -261,8 +333,11 @@ const WriterStudio = () => {
     setDeletingDraftId(null);
     if (currentDraftId === id) {
       setCurrentDraftId(null);
+      currentDraftIdRef.current = null;
       setContent('');
-      setTitle('Untitled Story');
+      setTitle('');
+      setSaveStatus('idle');
+      setLastSaved(null);
     }
     toast.success('Draft deleted');
   }, [deleteDraft, currentDraftId]);
@@ -331,7 +406,7 @@ const WriterStudio = () => {
               style={{ fontFamily: 'Georgia, serif' }}
               placeholder="Story Title..."
             />
-            <SaveStatusIndicator status={saveStatus} lastSaved={lastSaved} />
+            <SaveStatusIndicator status={saveStatus} lastSaved={lastSaved} draftId={currentDraftId} />
           </div>
 
           {/* Drafts Button */}
@@ -498,7 +573,7 @@ const WriterStudio = () => {
               <motion.button
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
-                onClick={handleOpenSaveDialog}
+                onClick={handleSaveClick}
                 disabled={!content.trim()}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg border border-neutral-600 text-neutral-300 hover:bg-neutral-800 transition-all duration-300 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
               >
@@ -519,9 +594,19 @@ const WriterStudio = () => {
               </motion.button>
             </div>
 
-            {/* Right: Language indicator */}
-            <div className="text-xs text-neutral-600 tracking-wider hidden sm:block">
-              {selectedLanguage !== 'english' && languageLabels[selectedLanguage]}
+            {/* Right: Save as New option (only if draft exists) */}
+            <div className="hidden sm:block">
+              {currentDraftId && (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleSaveAsNew}
+                  className="text-xs text-neutral-500 hover:text-neutral-300 transition-colors flex items-center gap-1"
+                >
+                  <Copy size={12} />
+                  Save as New
+                </motion.button>
+              )}
             </div>
           </div>
         </div>
@@ -568,7 +653,7 @@ const WriterStudio = () => {
                   Publish Story?
                 </h3>
                 <p className="text-neutral-400 text-sm mb-6">
-                  "{title}" will be visible to all readers
+                  "{title || 'Untitled Story'}" will be visible to all readers
                 </p>
                 
                 <div className="flex gap-3">
@@ -601,7 +686,7 @@ const WriterStudio = () => {
         )}
       </AnimatePresence>
 
-      {/* Save Draft Dialog */}
+      {/* Save Draft Dialog (only for new drafts) */}
       <AnimatePresence>
         {showSaveDialog && (
           <>
@@ -639,10 +724,10 @@ const WriterStudio = () => {
                   className="text-xl mb-2 text-center"
                   style={{ fontFamily: 'Georgia, serif' }}
                 >
-                  Save to Drafts
+                  Create Draft
                 </h3>
                 <p className="text-neutral-400 text-sm mb-5 text-center">
-                  Give your story a title
+                  Give your story a title to save it
                 </p>
                 
                 <input
@@ -654,7 +739,7 @@ const WriterStudio = () => {
                   style={{ fontFamily: 'Georgia, serif' }}
                   autoFocus
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleManualSave();
+                    if (e.key === 'Enter') handleCreateDraft();
                   }}
                 />
                 
@@ -668,11 +753,11 @@ const WriterStudio = () => {
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={handleManualSave}
+                    onClick={handleCreateDraft}
                     className="flex-1 py-3 bg-red-900/40 border border-red-900/50 rounded-lg text-red-300 hover:bg-red-900/60 transition-colors flex items-center justify-center gap-2"
                   >
                     <Check size={16} />
-                    Save Draft
+                    Create Draft
                   </motion.button>
                 </div>
               </div>
@@ -719,14 +804,25 @@ const WriterStudio = () => {
                     <span className="text-xs text-neutral-500">({drafts.length})</span>
                   )}
                 </div>
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => setShowDraftsPanel(false)}
-                  className="p-2 rounded-lg hover:bg-neutral-800 transition-colors text-neutral-400 hover:text-white"
-                >
-                  <X size={18} />
-                </motion.button>
+                <div className="flex items-center gap-2">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleNewStory}
+                    className="px-3 py-1.5 text-xs rounded-lg border border-neutral-700 hover:bg-neutral-800 transition-colors text-neutral-400 hover:text-white flex items-center gap-1.5"
+                  >
+                    <Edit3 size={12} />
+                    New Story
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => setShowDraftsPanel(false)}
+                    className="p-2 rounded-lg hover:bg-neutral-800 transition-colors text-neutral-400 hover:text-white"
+                  >
+                    <X size={18} />
+                  </motion.button>
+                </div>
               </div>
 
               {/* Drafts List */}
@@ -766,13 +862,20 @@ const WriterStudio = () => {
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex-1 min-w-0">
-                              <h4 
-                                className="text-sm text-white font-medium truncate mb-1"
-                                style={{ fontFamily: 'Georgia, serif' }}
-                              >
-                                {draft.title}
-                              </h4>
-                              <div className="flex items-center gap-2 text-xs text-neutral-500">
+                              <div className="flex items-center gap-2">
+                                <h4 
+                                  className="text-sm text-white font-medium truncate"
+                                  style={{ fontFamily: 'Georgia, serif' }}
+                                >
+                                  {draft.title}
+                                </h4>
+                                {currentDraftId === draft.id && (
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-900/30 text-red-400 border border-red-900/40">
+                                    Current
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 text-xs text-neutral-500 mt-1">
                                 <Clock size={11} />
                                 <span>{formatRelativeTime(draft.lastEdited)}</span>
                                 <span className="text-neutral-700">•</span>
@@ -862,17 +965,17 @@ const WriterStudio = () => {
       {Array.from({ length: 3 }).map((_, i) => (
         <motion.div
           key={i}
-          className="fixed w-1 h-1 rounded-full bg-red-400/15 pointer-events-none"
+          className="fixed w-1 h-1 rounded-full bg-red-500/20 pointer-events-none"
           style={{
-            left: `${25 + i * 25}%`,
-            top: `${35 + (i % 2) * 30}%`,
+            left: `${20 + i * 30}%`,
+            top: `${30 + i * 20}%`,
           }}
           animate={{
-            y: [-10, 10, -10],
-            opacity: [0.1, 0.25, 0.1],
+            y: [0, -30, 0],
+            opacity: [0.2, 0.5, 0.2],
           }}
           transition={{
-            duration: 6 + i,
+            duration: 4 + i,
             repeat: Infinity,
             ease: 'easeInOut',
             delay: i * 0.5,
