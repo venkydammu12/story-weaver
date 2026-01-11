@@ -12,31 +12,104 @@ serve(async (req) => {
   }
 
   try {
+    // SECURITY: Validate authentication token
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized - No valid token provided" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    
+    // Create authenticated client to validate the user
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    // Validate the JWT and get user claims
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+    
+    if (claimsError || !claimsData?.claims) {
+      console.error("Auth validation error:", claimsError);
+      return new Response(
+        JSON.stringify({ error: "Unauthorized - Invalid token" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const userId = claimsData.claims.sub;
+    if (!userId) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized - User ID not found" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // SECURITY: Verify user has author role using service role client
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+    
+    const { data: roleData, error: roleError } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "author")
+      .maybeSingle();
+
+    if (roleError) {
+      console.error("Role check error:", roleError);
+      return new Response(
+        JSON.stringify({ error: "Failed to verify author permissions" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!roleData) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden - Only authors can publish stories" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Parse and validate request body
     const { title, content, language } = await req.json();
 
-    if (!title || !content) {
+    if (!title || typeof title !== "string" || title.trim().length === 0) {
       return new Response(
-        JSON.stringify({ error: "Title and content are required" }),
+        JSON.stringify({ error: "Title is required and must be a non-empty string" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Create Supabase client with service role key for admin access
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    if (!content || typeof content !== "string" || content.trim().length === 0) {
+      return new Response(
+        JSON.stringify({ error: "Content is required and must be a non-empty string" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Sanitize inputs - limit lengths to prevent abuse
+    const sanitizedTitle = title.trim().slice(0, 200);
+    const sanitizedContent = content.trim().slice(0, 100000); // 100k char limit
+    const sanitizedLanguage = ["english", "telugu", "hindi"].includes(language) 
+      ? language 
+      : "english";
 
     // Calculate word count
-    const wordCount = content.split(/\s+/).filter(Boolean).length;
+    const wordCount = sanitizedContent.split(/\s+/).filter(Boolean).length;
 
-    // Insert the published story (user_id is null for system-published stories)
-    const { data, error } = await supabase
+    // Insert the published story with the authenticated user's ID
+    const { data, error } = await supabaseAdmin
       .from("stories")
       .insert({
-        user_id: null,
-        title,
-        content,
-        language: language || "english",
+        user_id: userId,
+        title: sanitizedTitle,
+        content: sanitizedContent,
+        language: sanitizedLanguage,
         word_count: wordCount,
         is_published: true,
       })
@@ -45,7 +118,10 @@ serve(async (req) => {
 
     if (error) {
       console.error("Database error:", error);
-      throw new Error("Failed to publish story");
+      return new Response(
+        JSON.stringify({ error: "Failed to publish story" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     return new Response(
@@ -59,7 +135,7 @@ serve(async (req) => {
   } catch (error) {
     console.error("publish-story error:", error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      JSON.stringify({ error: "An unexpected error occurred" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

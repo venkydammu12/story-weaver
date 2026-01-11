@@ -8,6 +8,7 @@ import {
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useDrafts, Draft } from '@/hooks/useDrafts';
+import { supabase } from '@/integrations/supabase/client';
 
 // Format relative time helper
 const formatRelativeTime = (dateString: string) => {
@@ -200,25 +201,35 @@ const WriterStudio = () => {
     setIsPublishing(true);
 
     try {
+      // Get authenticated session for the request
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        toast.error('Please sign in to publish stories');
+        setIsPublishing(false);
+        return;
+      }
+
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/publish-story`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            'Authorization': `Bearer ${session.access_token}`,
           },
           body: JSON.stringify({
-            title,
-            content,
+            title: title.trim().slice(0, 200),
+            content: content.trim().slice(0, 100000),
             language: selectedLanguage,
           }),
         }
       );
 
+      const result = await response.json();
+
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Publishing failed');
+        throw new Error(result.error || 'Publishing failed');
       }
 
       // Delete the draft since it's now published

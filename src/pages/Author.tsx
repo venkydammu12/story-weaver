@@ -1,12 +1,12 @@
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
-import { useRef, useState } from 'react';
-import { ArrowLeft, PenTool, X } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useRef, useState, useEffect } from 'react';
+import { ArrowLeft, PenTool } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { CinematicNavigation } from '@/components/CinematicNavigation';
 import { ParallaxImage } from '@/components/ParallaxImage';
+import { AuthLogin } from '@/components/AuthLogin';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import authorProfile from '@/assets/author-profile.jpeg';
 
@@ -45,11 +45,11 @@ const FloatingParticles = () => (
 
 const Author = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const heroRef = useRef<HTMLDivElement>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const { user, loading: authLoading } = useAuth();
+  const [isAuthor, setIsAuthor] = useState<boolean | null>(null);
   
   const { scrollYProgress: heroProgress } = useScroll({
     target: heroRef,
@@ -60,22 +60,65 @@ const Author = () => {
   const heroScale = useTransform(heroProgress, [0, 1], [1, 1.1]);
   const heroOpacity = useTransform(heroProgress, [0, 0.8], [1, 0]);
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-
-    // Check if password matches
-    if (password === "Venkydammu04@") {
-      toast.success("Welcome back!");
-      setShowLoginModal(false);
-      setPassword("");
-      navigate("/write");
-    } else {
-      setError("Access Denied");
-      toast.error("Access Denied");
+  // Check if redirected here with showLogin state
+  useEffect(() => {
+    if (location.state?.showLogin) {
+      setShowLoginModal(true);
+      // Clear the state to prevent modal from showing again on refresh
+      window.history.replaceState({}, document.title);
     }
-    setLoading(false);
+  }, [location.state]);
+
+  // Check author status when user changes
+  useEffect(() => {
+    const checkAuthorRole = async () => {
+      if (!user) {
+        setIsAuthor(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .eq('role', 'author')
+          .maybeSingle();
+
+        if (error) {
+          console.error('Error checking author role:', error);
+          setIsAuthor(false);
+        } else {
+          setIsAuthor(!!data);
+        }
+      } catch (err) {
+        console.error('Failed to check author status:', err);
+        setIsAuthor(false);
+      }
+    };
+
+    if (!authLoading) {
+      checkAuthorRole();
+    }
+  }, [user, authLoading]);
+
+  const handleWriteClick = () => {
+    if (!user) {
+      // Not logged in - show login modal
+      setShowLoginModal(true);
+    } else if (isAuthor) {
+      // Logged in and is author - go to writer studio
+      navigate('/write');
+    } else {
+      // Logged in but not an author
+      toast.error('Author access required');
+    }
+  };
+
+  const handleLoginSuccess = () => {
+    // After login, navigate to write if user is author
+    // The useEffect will update isAuthor state
+    toast.success('Welcome back!');
   };
 
   const authorInfo = [
@@ -131,7 +174,7 @@ const Author = () => {
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.6, delay: 0.4 }}
-        onClick={() => setShowLoginModal(true)}
+        onClick={handleWriteClick}
         className="fixed top-24 right-6 z-40 flex items-center gap-3 group"
       >
         <motion.span 
@@ -140,7 +183,7 @@ const Author = () => {
           initial={{ x: 10 }}
           whileHover={{ x: 0 }}
         >
-          Write Stories
+          {user && isAuthor ? 'Writer Studio' : 'Write Stories'}
         </motion.span>
         <motion.div
           className="relative p-3 rounded-full border border-neutral-700 group-hover:border-red-900/50 transition-all duration-300 overflow-hidden"
@@ -188,94 +231,12 @@ const Author = () => {
         />
       </motion.button>
 
-      {/* Login Modal */}
-      <AnimatePresence>
-        {showLoginModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center px-6"
-            onClick={() => setShowLoginModal(false)}
-          >
-            {/* Backdrop */}
-            <div className="absolute inset-0 bg-black/80 backdrop-blur-md" />
-            
-            {/* Modal */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={{ duration: 0.3 }}
-              onClick={(e) => e.stopPropagation()}
-              className="relative w-full max-w-md p-8 rounded-2xl bg-neutral-900/90 border border-red-900/30 backdrop-blur-xl"
-              style={{
-                boxShadow: "0 0 60px hsl(0 70% 20% / 0.4), 0 0 120px hsl(0 70% 15% / 0.2)",
-              }}
-            >
-              {/* Close button */}
-              <button
-                onClick={() => setShowLoginModal(false)}
-                className="absolute top-4 right-4 p-2 rounded-full text-neutral-400 hover:text-white hover:bg-white/10 transition-colors"
-              >
-                <X size={20} />
-              </button>
-
-              {/* Header */}
-              <div className="text-center mb-8">
-                <p className="text-red-900/80 text-xs tracking-[0.3em] uppercase mb-2">
-                  Author Access
-                </p>
-                <h2 
-                  className="text-2xl md:text-3xl font-light tracking-[0.1em]"
-                  style={{ fontFamily: 'Georgia, serif' }}
-                >
-                  Writer Studio
-                </h2>
-              </div>
-
-              {/* Login Form */}
-              <form onSubmit={handleLogin} className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-sm text-neutral-400" style={{ fontFamily: 'Georgia, serif' }}>
-                    Password
-                  </label>
-                  <Input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter your password"
-                    className="bg-black/50 border-neutral-700 text-white placeholder:text-neutral-500 focus:border-red-900/50"
-                    required
-                    autoFocus
-                  />
-                </div>
-
-                {error && (
-                  <motion.p
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-red-500 text-sm text-center font-medium"
-                  >
-                    {error}
-                  </motion.p>
-                )}
-
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-red-900/30 border border-red-900/50 hover:bg-red-900/50 text-white transition-all duration-300"
-                  style={{
-                    boxShadow: "0 0 20px hsl(0 70% 25% / 0.3)",
-                  }}
-                >
-                  {loading ? "Signing in..." : "Enter Writer Studio"}
-                </Button>
-              </form>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Auth Login Modal */}
+      <AuthLogin 
+        isOpen={showLoginModal} 
+        onClose={() => setShowLoginModal(false)}
+        onSuccess={handleLoginSuccess}
+      />
       
       {/* Hero Section with Author Portrait */}
       <section 
