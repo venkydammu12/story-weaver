@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthorProtectedRoute } from "@/components/AuthorProtectedRoute";
 import Index from "./pages/Index";
 import About from "./pages/About";
 import Author from "./pages/Author";
@@ -24,8 +25,22 @@ const App = () => (
           <Route path="/about" element={<About />} />
           <Route path="/author" element={<Author />} />
           <Route path="/stories" element={<StoriesPosters />} />
-          <Route path="/write" element={<WriterStudio />} />
-          <Route path="/drafts" element={<Drafts />} />
+          <Route 
+            path="/write" 
+            element={
+              <AuthorProtectedRoute>
+                <WriterStudio />
+              </AuthorProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/drafts" 
+            element={
+              <AuthorProtectedRoute>
+                <Drafts />
+              </AuthorProtectedRoute>
+            } 
+          />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
