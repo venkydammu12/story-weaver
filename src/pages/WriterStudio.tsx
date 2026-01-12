@@ -151,16 +151,25 @@ const WriterStudio = () => {
     setIsConverting(true);
     
     try {
+      // Get authenticated session for the request
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        toast.error('Please sign in to use this feature');
+        setIsConverting(false);
+        return;
+      }
+
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/convert-language`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            'Authorization': `Bearer ${session.access_token}`,
           },
           body: JSON.stringify({
-            text: content,
+            text: content.trim().slice(0, 50000),
             targetLanguage: selectedLanguage,
           }),
         }
@@ -180,7 +189,6 @@ const WriterStudio = () => {
         toast.success(`Converted to ${languageLabels[selectedLanguage]}`);
       }, 100);
     } catch (error) {
-      console.error('Conversion error:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to convert text');
     } finally {
       setIsConverting(false);
