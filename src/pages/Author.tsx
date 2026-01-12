@@ -125,7 +125,7 @@ const Author = () => {
     { label: 'Full Name', value: 'D. Venky' },
     { label: 'Role', value: 'Author / Storyteller / Poet' },
     { label: 'Date of Birth', value: 'August 7, 2004' },
-    { label: 'Education', value: 'Bachelor of Arts in Literature' },
+    { label: 'Education', value: 'BTech Graduate' },
     { label: 'Languages', value: 'English, Telugu' },
     { label: 'Genres', value: 'Romance, Drama, Poetry, Emotional Fiction' },
   ];
