@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,20 +11,85 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Reject non-POST methods
+  if (req.method !== "POST") {
+    return new Response(
+      JSON.stringify({ error: "Method not allowed" }),
+      { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
   try {
-    const { text, targetLanguage } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    // SECURITY: Validate authentication token
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    if (!text || !targetLanguage) {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+    // Create authenticated client to validate the user
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    // Validate the JWT
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+
+    if (claimsError || !claimsData?.claims) {
       return new Response(
-        JSON.stringify({ error: "Missing text or targetLanguage" }),
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Parse and validate request body
+    let body;
+    try {
+      body = await req.json();
+    } catch {
+      return new Response(
+        JSON.stringify({ error: "Invalid request body" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    const { text, targetLanguage } = body;
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+
+    if (!LOVABLE_API_KEY) {
+      return new Response(
+        JSON.stringify({ error: "Service temporarily unavailable" }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate inputs
+    if (!text || typeof text !== "string" || text.trim().length === 0) {
+      return new Response(
+        JSON.stringify({ error: "Text is required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!targetLanguage || typeof targetLanguage !== "string") {
+      return new Response(
+        JSON.stringify({ error: "Target language is required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Sanitize and limit input length
+    const sanitizedText = text.trim().slice(0, 50000);
+    const validLanguages = ["english", "telugu", "hindi"];
+    const sanitizedLanguage = validLanguages.includes(targetLanguage.toLowerCase()) 
+      ? targetLanguage.toLowerCase() 
+      : "english";
 
     const languageMap: Record<string, string> = {
       english: "English",
@@ -31,7 +97,7 @@ serve(async (req) => {
       hindi: "Hindi (हिंदी)",
     };
 
-    const targetLangName = languageMap[targetLanguage] || targetLanguage;
+    const targetLangName = languageMap[sanitizedLanguage] || "English";
 
     const systemPrompt = `You are a professional language editor and translator. Your task is to convert WhatsApp-style, informal, or transliterated text into proper, formal ${targetLangName}.
 
@@ -54,7 +120,7 @@ Rules:
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Convert this text to proper ${targetLangName}:\n\n${text}` },
+          { role: "user", content: `Convert this text to proper ${targetLangName}:\n\n${sanitizedText}` },
         ],
       }),
     });
@@ -68,26 +134,27 @@ Rules:
       }
       if (response.status === 402) {
         return new Response(
-          JSON.stringify({ error: "AI credits exhausted. Please add credits." }),
+          JSON.stringify({ error: "Service temporarily unavailable" }),
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      throw new Error("AI conversion failed");
+      return new Response(
+        JSON.stringify({ error: "Conversion failed" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const data = await response.json();
-    const convertedText = data.choices?.[0]?.message?.content || text;
+    const convertedText = data.choices?.[0]?.message?.content || sanitizedText;
 
     return new Response(
       JSON.stringify({ convertedText }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("convert-language error:", error);
+    // Generic error - no stack traces
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      JSON.stringify({ error: "An unexpected error occurred" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

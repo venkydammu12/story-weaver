@@ -16,7 +16,7 @@ const NavItem = ({ label, href = "/" }: { label: string; href?: string }) => {
       onHoverEnd={() => setIsHovered(false)}
       onTouchStart={() => setIsHovered(true)}
       onTouchEnd={() => setIsHovered(false)}
-      className="relative px-3 py-2 md:px-5 md:py-3 cursor-pointer no-underline"
+      className="relative px-2 py-2 sm:px-3 md:px-5 md:py-3 cursor-pointer no-underline touch-manipulation"
       initial={false}
       animate={{
         scale: isHovered ? 1.08 : 1,
@@ -98,7 +98,7 @@ const NavItem = ({ label, href = "/" }: { label: string; href?: string }) => {
 
       {/* Text with glow */}
       <motion.span
-        className="relative z-10 text-xs md:text-sm font-medium tracking-wide whitespace-nowrap"
+        className="relative z-10 text-[10px] sm:text-xs md:text-sm font-medium tracking-wide whitespace-nowrap"
         style={{ color: "#ffffff" }}
         animate={{
           textShadow: isHovered
@@ -136,7 +136,7 @@ export const CinematicNavigation = ({ onEnterWorld }: CinematicNavigationProps) 
         ease: [0.25, 0.1, 0.25, 1],
         delay: 0.2 
       }}
-      className="fixed top-0 left-0 right-0 z-50 px-4 md:px-12 py-4 md:py-5"
+      className="fixed top-0 left-0 right-0 z-50 px-2 sm:px-4 md:px-12 py-3 md:py-5"
       style={{
         background: "linear-gradient(to bottom, hsl(0 0% 0% / 0.95) 0%, hsl(0 0% 0% / 0.85) 50%, hsl(0 0% 0% / 0.7) 100%)",
         backdropFilter: "blur(12px)",
@@ -144,13 +144,13 @@ export const CinematicNavigation = ({ onEnterWorld }: CinematicNavigationProps) 
       }}
     >
       <nav className="flex items-center justify-between max-w-7xl mx-auto">
-        {/* Spacer for symmetry */}
-        <div className="w-[100px] md:w-[140px]" />
+        {/* Spacer for symmetry - hidden on mobile */}
+        <div className="hidden sm:block w-[80px] md:w-[140px]" />
 
         {/* Nav links - Center */}
-        <div className="flex items-center gap-1 md:gap-4">
+        <div className="flex items-center gap-0 sm:gap-1 md:gap-4 flex-1 sm:flex-initial justify-center">
           <NavItem label="Home" href="/" />
-          <NavItem label="Story Posters" href="/stories" />
+          <NavItem label="Stories" href="/stories" />
           <NavItem label="Author" href="/author" />
           <NavItem label="About" href="/about" />
         </div>
@@ -160,7 +160,7 @@ export const CinematicNavigation = ({ onEnterWorld }: CinematicNavigationProps) 
           onClick={handleEnterWorld}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.98 }}
-          className="relative px-4 py-2 md:px-6 md:py-2.5 text-xs md:text-sm font-medium tracking-wider text-white overflow-hidden rounded-full"
+          className="relative px-3 py-1.5 sm:px-4 sm:py-2 md:px-6 md:py-2.5 text-[10px] sm:text-xs md:text-sm font-medium tracking-wider text-white overflow-hidden rounded-full touch-manipulation flex-shrink-0"
           style={{
             background: "linear-gradient(135deg, hsl(0 85% 25% / 0.8) 0%, hsl(0 100% 15% / 0.9) 100%)",
             border: "1px solid hsl(0 85% 35% / 0.5)",
@@ -175,7 +175,8 @@ export const CinematicNavigation = ({ onEnterWorld }: CinematicNavigationProps) 
             }}
             transition={{ duration: 0.3 }}
           />
-          <span className="relative z-10">Enter World</span>
+          <span className="relative z-10 hidden sm:inline">Enter World</span>
+          <span className="relative z-10 sm:hidden">Enter</span>
         </motion.button>
       </nav>
     </motion.header>
