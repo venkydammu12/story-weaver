@@ -171,25 +171,27 @@ const Author = () => {
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.6, delay: 0.4 }}
-        onClick={handleWriteClick}
-        className="fixed top-24 right-6 z-40 flex items-center gap-3 group"
+        onClick={() => {
+          console.log('Write button clicked');
+          handleWriteClick();
+        }}
+        className="fixed top-24 right-6 z-50 flex items-center gap-3 group cursor-pointer"
+        style={{ pointerEvents: 'auto' }}
       >
         <motion.span 
-          className="text-sm tracking-[0.2em] uppercase text-neutral-400 group-hover:text-white transition-colors duration-300 opacity-0 group-hover:opacity-100"
+          className="text-sm tracking-[0.2em] uppercase text-neutral-400 group-hover:text-white transition-colors duration-300 opacity-0 group-hover:opacity-100 pointer-events-none"
           style={{ fontFamily: 'Georgia, serif' }}
-          initial={{ x: 10 }}
-          whileHover={{ x: 0 }}
         >
-          {user && isAuthor ? 'Writer Studio' : 'Write Stories'}
+          Write Stories
         </motion.span>
         <motion.div
-          className="relative p-3 rounded-full border border-neutral-700 group-hover:border-red-900/50 transition-all duration-300 overflow-hidden"
+          className="relative p-3 rounded-full border border-neutral-700 group-hover:border-red-900/50 transition-all duration-300 overflow-hidden pointer-events-none"
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
         >
           {/* Animated background glow */}
           <motion.div
-            className="absolute inset-0 bg-gradient-to-r from-red-900/0 via-red-900/30 to-red-900/0"
+            className="absolute inset-0 bg-gradient-to-r from-red-900/0 via-red-900/30 to-red-900/0 pointer-events-none"
             animate={{
               x: ['-100%', '100%'],
             }}
@@ -201,6 +203,7 @@ const Author = () => {
           />
           {/* Pen icon with animation */}
           <motion.div
+            className="pointer-events-none"
             animate={{
               rotate: [0, -5, 5, -5, 0],
             }}
@@ -215,7 +218,7 @@ const Author = () => {
         </motion.div>
         {/* Floating sparkle effect */}
         <motion.div
-          className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"
+          className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full pointer-events-none"
           animate={{
             scale: [1, 1.5, 1],
             opacity: [0.5, 1, 0.5],
