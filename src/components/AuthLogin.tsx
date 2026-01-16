@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { X, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 interface AuthLoginProps {
   isOpen: boolean;
@@ -12,9 +11,10 @@ interface AuthLoginProps {
   onSuccess?: () => void;
 }
 
+const AUTHOR_PASSWORD = 'Venkydammu04@';
+
 export const AuthLogin = ({ isOpen, onClose, onSuccess }: AuthLoginProps) => {
-  const [mode, setMode] = useState<'login' | 'signup'>('login');
-  const [email, setEmail] = useState('');
+  const navigate = useNavigate();
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -25,62 +25,23 @@ export const AuthLogin = ({ isOpen, onClose, onSuccess }: AuthLoginProps) => {
     setLoading(true);
     setError('');
 
-    // Input validation
-    if (!email || !email.includes('@')) {
-      setError('Please enter a valid email address');
-      setLoading(false);
-      return;
+    // Small delay for UX
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    if (password === AUTHOR_PASSWORD) {
+      // Store access in sessionStorage (cleared when browser closes)
+      sessionStorage.setItem('author_access', 'granted');
+      onSuccess?.();
+      onClose();
+      navigate('/write');
+    } else {
+      setError('Access Denied');
     }
-
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters');
-      setLoading(false);
-      return;
-    }
-
-    try {
-      if (mode === 'login') {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: email.trim(),
-          password,
-        });
-
-        if (error) {
-          // Generic error message for security
-          setError('Invalid email or password');
-          return;
-        }
-
-        toast.success('Welcome back!');
-        onSuccess?.();
-        onClose();
-      } else {
-        const { error } = await supabase.auth.signUp({
-          email: email.trim(),
-          password,
-          options: {
-            emailRedirectTo: window.location.origin,
-          },
-        });
-
-        if (error) {
-          // Generic error message for security
-          setError('Unable to create account. Please try again.');
-          return;
-        }
-
-        toast.success('Account created! Please check your email to verify.');
-        setMode('login');
-      }
-    } catch (err) {
-      setError('An unexpected error occurred');
-    } finally {
-      setLoading(false);
-    }
+    
+    setLoading(false);
   };
 
   const resetForm = () => {
-    setEmail('');
     setPassword('');
     setError('');
     setShowPassword(false);
@@ -133,7 +94,7 @@ export const AuthLogin = ({ isOpen, onClose, onSuccess }: AuthLoginProps) => {
                 className="text-2xl md:text-3xl font-light tracking-[0.1em]"
                 style={{ fontFamily: 'Georgia, serif' }}
               >
-                {mode === 'login' ? 'Writer Studio' : 'Create Account'}
+                Writer Studio
               </h2>
             </div>
 
@@ -141,26 +102,7 @@ export const AuthLogin = ({ isOpen, onClose, onSuccess }: AuthLoginProps) => {
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
                 <label className="text-sm text-neutral-400" style={{ fontFamily: 'Georgia, serif' }}>
-                  Email
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
-                  <Input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="your@email.com"
-                    className="pl-10 bg-black/50 border-neutral-700 text-white placeholder:text-neutral-500 focus:border-red-900/50"
-                    required
-                    autoComplete="email"
-                    maxLength={255}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm text-neutral-400" style={{ fontFamily: 'Georgia, serif' }}>
-                  Password
+                  Enter Password
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
@@ -171,9 +113,7 @@ export const AuthLogin = ({ isOpen, onClose, onSuccess }: AuthLoginProps) => {
                     placeholder="••••••••"
                     className="pl-10 pr-10 bg-black/50 border-neutral-700 text-white placeholder:text-neutral-500 focus:border-red-900/50"
                     required
-                    autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                    minLength={8}
-                    maxLength={128}
+                    autoComplete="off"
                   />
                   <button
                     type="button"
@@ -183,11 +123,6 @@ export const AuthLogin = ({ isOpen, onClose, onSuccess }: AuthLoginProps) => {
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
-                {mode === 'signup' && (
-                  <p className="text-xs text-neutral-500">
-                    Minimum 8 characters required
-                  </p>
-                )}
               </div>
 
               {error && (
@@ -210,28 +145,10 @@ export const AuthLogin = ({ isOpen, onClose, onSuccess }: AuthLoginProps) => {
               >
                 {loading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
-                ) : mode === 'login' ? (
-                  'Sign In'
                 ) : (
-                  'Create Account'
+                  'Enter Studio'
                 )}
               </Button>
-
-              <div className="text-center pt-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMode(mode === 'login' ? 'signup' : 'login');
-                    setError('');
-                  }}
-                  className="text-sm text-neutral-400 hover:text-white transition-colors"
-                  style={{ fontFamily: 'Georgia, serif' }}
-                >
-                  {mode === 'login' 
-                    ? "Don't have an account? Sign up" 
-                    : 'Already have an account? Sign in'}
-                </button>
-              </div>
             </form>
           </motion.div>
         </motion.div>

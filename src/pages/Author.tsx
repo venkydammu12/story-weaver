@@ -103,15 +103,12 @@ const Author = () => {
   }, [user, authLoading]);
 
   const handleWriteClick = () => {
-    if (!user) {
-      // Not logged in - show login modal
-      setShowLoginModal(true);
-    } else if (isAuthor) {
-      // Logged in and is author - go to writer studio
+    // Check if already has access via password
+    if (sessionStorage.getItem('author_access') === 'granted') {
       navigate('/write');
     } else {
-      // Logged in but not an author
-      toast.error('Author access required');
+      // Show password modal
+      setShowLoginModal(true);
     }
   };
 
