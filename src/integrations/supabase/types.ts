@@ -18,7 +18,6 @@ export type Database = {
         Row: {
           created_at: string
           display_name: string | null
-          email: string | null
           id: string
           is_author: boolean | null
           updated_at: string
@@ -27,7 +26,6 @@ export type Database = {
         Insert: {
           created_at?: string
           display_name?: string | null
-          email?: string | null
           id?: string
           is_author?: boolean | null
           updated_at?: string
@@ -36,7 +34,6 @@ export type Database = {
         Update: {
           created_at?: string
           display_name?: string | null
-          email?: string | null
           id?: string
           is_author?: boolean | null
           updated_at?: string
@@ -103,7 +100,19 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      published_stories_public: {
+        Row: {
+          author_name: string | null
+          content: string | null
+          created_at: string | null
+          id: string | null
+          language: string | null
+          title: string | null
+          updated_at: string | null
+          word_count: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
