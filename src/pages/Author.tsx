@@ -106,10 +106,12 @@ const Author = () => {
     // Check if already has access via password
     if (sessionStorage.getItem('author_access') === 'granted') {
       navigate('/write');
-    } else {
-      // Show password modal
-      setShowLoginModal(true);
+      return;
     }
+
+    // Open modal on next tick to avoid the opening click immediately bubbling
+    // into the modal overlay and closing it.
+    window.setTimeout(() => setShowLoginModal(true), 0);
   };
 
   const handleLoginSuccess = () => {
