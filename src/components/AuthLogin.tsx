@@ -63,8 +63,8 @@ export const AuthLogin = ({ isOpen, onClose, onSuccess }: AuthLoginProps) => {
           onClick={handleClose}
         >
           {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-md" />
-          
+          <div className="absolute inset-0 bg-background/60 backdrop-blur-md" />
+
           {/* Modal */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -72,25 +72,26 @@ export const AuthLogin = ({ isOpen, onClose, onSuccess }: AuthLoginProps) => {
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ duration: 0.3 }}
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-md p-8 rounded-2xl bg-neutral-900/90 border border-red-900/30 backdrop-blur-xl"
+            className="relative z-[201] w-full max-w-md p-8 rounded-2xl bg-gradient-to-b from-card to-background text-foreground ring-2 ring-primary/30 border border-border/60"
             style={{
-              boxShadow: "0 0 60px hsl(0 70% 20% / 0.4), 0 0 120px hsl(0 70% 15% / 0.2)",
+              boxShadow:
+                '0 0 0 1px hsl(var(--border) / 0.5), 0 25px 60px -20px hsl(0 0% 0% / 0.85), 0 0 80px hsl(var(--primary) / 0.20)',
             }}
           >
             {/* Close button */}
             <button
               onClick={handleClose}
-              className="absolute top-4 right-4 p-2 rounded-full text-neutral-400 hover:text-white hover:bg-white/10 transition-colors"
+              className="absolute top-4 right-4 p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
             >
               <X size={20} />
             </button>
 
             {/* Header */}
             <div className="text-center mb-8">
-              <p className="text-red-900/80 text-xs tracking-[0.3em] uppercase mb-2">
+              <p className="text-primary/80 text-xs tracking-[0.3em] uppercase mb-2">
                 Author Access
               </p>
-              <h2 
+              <h2
                 className="text-2xl md:text-3xl font-light tracking-[0.1em]"
                 style={{ fontFamily: 'Georgia, serif' }}
               >
@@ -101,24 +102,24 @@ export const AuthLogin = ({ isOpen, onClose, onSuccess }: AuthLoginProps) => {
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
-                <label className="text-sm text-neutral-400" style={{ fontFamily: 'Georgia, serif' }}>
+                <label className="text-sm text-muted-foreground" style={{ fontFamily: 'Georgia, serif' }}>
                   Enter Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="pl-10 pr-10 bg-black/50 border-neutral-700 text-white placeholder:text-neutral-500 focus:border-red-900/50"
+                    className="pl-10 pr-10 bg-background/40"
                     required
                     autoComplete="off"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
@@ -129,20 +130,13 @@ export const AuthLogin = ({ isOpen, onClose, onSuccess }: AuthLoginProps) => {
                 <motion.p
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="text-red-500 text-sm text-center font-medium"
+                  className="text-destructive text-sm text-center font-medium"
                 >
                   {error}
                 </motion.p>
               )}
 
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-red-900/30 border border-red-900/50 hover:bg-red-900/50 text-white transition-all duration-300"
-                style={{
-                  boxShadow: "0 0 20px hsl(0 70% 25% / 0.3)",
-                }}
-              >
+              <Button type="submit" disabled={loading} className="w-full">
                 {loading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
