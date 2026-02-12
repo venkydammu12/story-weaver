@@ -72,10 +72,11 @@ export const AuthLogin = ({ isOpen, onClose, onSuccess }: AuthLoginProps) => {
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ duration: 0.3 }}
             onClick={(e) => e.stopPropagation()}
-            className="relative z-[201] w-full max-w-md p-8 rounded-2xl bg-gradient-to-b from-card to-background text-foreground ring-2 ring-primary/30 border border-border/60"
+            className="relative z-[201] w-full max-w-md p-8 rounded-2xl text-foreground ring-2 ring-primary/40 border border-primary/20"
             style={{
+              background: 'hsl(0 0% 12%)',
               boxShadow:
-                '0 0 0 1px hsl(var(--border) / 0.5), 0 25px 60px -20px hsl(0 0% 0% / 0.85), 0 0 80px hsl(var(--primary) / 0.20)',
+                '0 0 0 1px hsl(0 0% 20%), 0 25px 60px -20px hsl(0 0% 0% / 0.9), 0 0 100px hsl(var(--primary) / 0.25)',
             }}
           >
             {/* Close button */}
