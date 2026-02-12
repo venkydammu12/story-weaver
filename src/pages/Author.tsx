@@ -139,6 +139,13 @@ const Author = () => {
   ];
 
   return (
+    <>
+    {/* Auth Login Modal - OUTSIDE perspective container so fixed positioning works */}
+    <AuthLogin 
+      isOpen={showLoginModal} 
+      onClose={() => setShowLoginModal(false)}
+      onSuccess={handleLoginSuccess}
+    />
     <div 
       className="min-h-screen bg-black text-white overflow-x-hidden"
       style={{ perspective: '2000px' }}
@@ -233,12 +240,7 @@ const Author = () => {
         />
       </motion.button>
 
-      {/* Auth Login Modal */}
-      <AuthLogin 
-        isOpen={showLoginModal} 
-        onClose={() => setShowLoginModal(false)}
-        onSuccess={handleLoginSuccess}
-      />
+      {/* Auth Login Modal moved outside perspective container */}
       
       {/* Hero Section with Author Portrait */}
       <section 
@@ -561,6 +563,7 @@ const Author = () => {
         </motion.a>
       </motion.div>
     </div>
+    </>
   );
 };
 
