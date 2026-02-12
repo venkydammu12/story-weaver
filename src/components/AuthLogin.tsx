@@ -63,7 +63,7 @@ export const AuthLogin = ({ isOpen, onClose, onSuccess }: AuthLoginProps) => {
           onClick={handleClose}
         >
           {/* Backdrop */}
-          <div className="absolute inset-0 bg-background/60 backdrop-blur-md" />
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-md" />
 
           {/* Modal */}
           <motion.div
@@ -72,11 +72,11 @@ export const AuthLogin = ({ isOpen, onClose, onSuccess }: AuthLoginProps) => {
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ duration: 0.3 }}
             onClick={(e) => e.stopPropagation()}
-            className="relative z-[201] w-full max-w-md p-8 rounded-2xl text-foreground ring-2 ring-primary/40 border border-primary/20"
+            className="relative z-[201] w-full max-w-md p-8 rounded-2xl text-white ring-2 ring-primary/60 border-2 border-primary/40"
             style={{
-              background: 'hsl(0 0% 12%)',
+              background: 'hsl(0 0% 28%)',
               boxShadow:
-                '0 0 0 1px hsl(0 0% 20%), 0 25px 60px -20px hsl(0 0% 0% / 0.9), 0 0 100px hsl(var(--primary) / 0.25)',
+                '0 0 0 2px hsl(var(--primary) / 0.4), 0 25px 60px -10px hsl(0 0% 0% / 0.95), 0 0 120px hsl(var(--primary) / 0.35)',
             }}
           >
             {/* Close button */}
