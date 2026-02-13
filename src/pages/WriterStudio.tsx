@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, Languages, Sparkles, Loader2,
   Save, FolderOpen, Send, Check, ChevronDown,
-  FileText, Clock, Trash2, Edit3, X, Copy
+  FileText, Clock, Trash2, Edit3, X, Copy, LogOut
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -428,20 +428,37 @@ const WriterStudio = () => {
             <SaveStatusIndicator status={saveStatus} lastSaved={lastSaved} draftId={currentDraftId} />
           </div>
 
-          {/* Drafts Button */}
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setShowDraftsPanel(true)}
-            className="relative p-2 rounded-full border border-neutral-700 hover:border-red-900/50 hover:bg-red-900/10 transition-all duration-300 text-neutral-400 hover:text-white"
-          >
-            <FolderOpen size={18} />
-            {drafts.length > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-900 text-[10px] rounded-full flex items-center justify-center text-red-200">
-                {drafts.length}
-              </span>
-            )}
-          </motion.button>
+          <div className="flex items-center gap-2">
+            {/* Drafts Button */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowDraftsPanel(true)}
+              className="relative p-2 rounded-full border border-neutral-700 hover:border-red-900/50 hover:bg-red-900/10 transition-all duration-300 text-neutral-400 hover:text-white"
+            >
+              <FolderOpen size={18} />
+              {drafts.length > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-900 text-[10px] rounded-full flex items-center justify-center text-red-200">
+                  {drafts.length}
+                </span>
+              )}
+            </motion.button>
+
+            {/* Logout Button */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                sessionStorage.removeItem('author_access');
+                navigate('/author');
+                toast.success('Signed out of Writer Studio');
+              }}
+              className="p-2 rounded-full border border-neutral-700 hover:border-red-900/50 hover:bg-red-900/10 transition-all duration-300 text-neutral-400 hover:text-white"
+              title="Sign out"
+            >
+              <LogOut size={18} />
+            </motion.button>
+          </div>
         </div>
       </motion.header>
 
