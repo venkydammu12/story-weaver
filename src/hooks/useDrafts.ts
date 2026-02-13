@@ -23,14 +23,38 @@ export const useDrafts = () => {
     draftsRef.current = drafts;
   }, [drafts]);
 
-  // Load drafts from localStorage on mount
+  // Load drafts from localStorage on mount - with cleanup
   useEffect(() => {
     const stored = localStorage.getItem(DRAFTS_STORAGE_KEY);
     if (stored) {
       try {
-        const parsed = JSON.parse(stored);
-        setDrafts(parsed);
-        draftsRef.current = parsed;
+        const parsed: Draft[] = JSON.parse(stored);
+        
+        // Clean up: remove empty/untitled drafts with no content
+        const cleaned = parsed.filter(d => 
+          d.content && d.content.trim().length > 0
+        );
+        
+        // Deduplicate: keep the most recent version based on title+content similarity
+        const seen = new Map<string, Draft>();
+        for (const draft of cleaned) {
+          const key = `${draft.title}::${draft.content.trim().substring(0, 200)}`;
+          const existing = seen.get(key);
+          if (!existing || new Date(draft.lastEdited) > new Date(existing.lastEdited)) {
+            seen.set(key, draft);
+          }
+        }
+        
+        const deduplicated = Array.from(seen.values())
+          .sort((a, b) => new Date(b.lastEdited).getTime() - new Date(a.lastEdited).getTime());
+        
+        // Save cleaned version back if different
+        if (deduplicated.length !== parsed.length) {
+          localStorage.setItem(DRAFTS_STORAGE_KEY, JSON.stringify(deduplicated));
+        }
+        
+        setDrafts(deduplicated);
+        draftsRef.current = deduplicated;
       } catch (e) {
         console.error('Failed to parse drafts:', e);
       }
@@ -131,6 +155,13 @@ export const useDrafts = () => {
     );
   }, [createDraft]);
 
+  // Clear all drafts
+  const clearAllDrafts = useCallback(() => {
+    localStorage.removeItem(DRAFTS_STORAGE_KEY);
+    draftsRef.current = [];
+    setDrafts([]);
+  }, []);
+
   return {
     drafts,
     saveDraft,
@@ -140,5 +171,6 @@ export const useDrafts = () => {
     getDraft,
     draftExists,
     duplicateDraft,
+    clearAllDrafts,
   };
 };

@@ -73,7 +73,7 @@ const SaveStatusIndicator = ({ status, lastSaved, draftId }: {
 const WriterStudio = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { drafts, saveDraft, deleteDraft, draftExists, duplicateDraft } = useDrafts();
+  const { drafts, saveDraft, deleteDraft, draftExists, duplicateDraft, clearAllDrafts } = useDrafts();
   
   // Load draft from navigation state if present
   const initialDraft = location.state?.draft as Draft | undefined;
@@ -841,6 +841,26 @@ const WriterStudio = () => {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
+                  {drafts.length > 0 && (
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => {
+                        clearAllDrafts();
+                        setCurrentDraftId(null);
+                        currentDraftIdRef.current = null;
+                        setContent('');
+                        setTitle('');
+                        setSaveStatus('idle');
+                        setLastSaved(null);
+                        toast.success('All drafts cleared');
+                      }}
+                      className="px-3 py-1.5 text-xs rounded-lg border border-red-900/40 hover:bg-red-900/20 transition-colors text-red-400 hover:text-red-300 flex items-center gap-1.5"
+                    >
+                      <Trash2 size={12} />
+                      Clear All
+                    </motion.button>
+                  )}
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
