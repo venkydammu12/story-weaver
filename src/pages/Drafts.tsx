@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, FileText, Trash2, Clock, Edit3 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -24,14 +24,29 @@ const DraftCard = ({
   draft, 
   onOpen, 
   onDelete,
+  onRename,
   index 
 }: { 
   draft: Draft; 
   onOpen: () => void; 
   onDelete: () => void;
+  onRename: (newTitle: string) => void;
   index: number;
 }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState(draft.title);
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleRenameSubmit = () => {
+    const trimmed = renameValue.trim();
+    if (trimmed && trimmed !== draft.title) {
+      onRename(trimmed);
+    } else {
+      setRenameValue(draft.title);
+    }
+    setIsRenaming(false);
+  };
 
   return (
     <motion.div
@@ -57,12 +72,33 @@ const DraftCard = ({
               <FileText size={18} className="text-red-400" />
             </div>
             <div>
-              <h3 
-                className="text-lg text-white font-medium truncate max-w-[250px]"
-                style={{ fontFamily: 'Georgia, serif' }}
-              >
-                {draft.title}
-              </h3>
+              {isRenaming ? (
+                <input
+                  ref={inputRef}
+                  value={renameValue}
+                  onChange={(e) => setRenameValue(e.target.value)}
+                  onBlur={handleRenameSubmit}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleRenameSubmit();
+                    if (e.key === 'Escape') { setRenameValue(draft.title); setIsRenaming(false); }
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  autoFocus
+                  className="text-lg text-white font-medium bg-transparent border-b border-red-900/50 outline-none max-w-[250px]"
+                  style={{ fontFamily: 'Georgia, serif' }}
+                />
+              ) : (
+                <h3 
+                  className="text-lg text-white font-medium truncate max-w-[250px]"
+                  style={{ fontFamily: 'Georgia, serif' }}
+                  onDoubleClick={(e) => {
+                    e.stopPropagation();
+                    setIsRenaming(true);
+                  }}
+                >
+                  {draft.title}
+                </h3>
+              )}
               <div className="flex items-center gap-3 mt-1">
                 <span className="text-xs text-neutral-500 flex items-center gap-1">
                   <Clock size={12} />
@@ -151,7 +187,7 @@ const DraftCard = ({
 
 const Drafts = () => {
   const navigate = useNavigate();
-  const { drafts, deleteDraft } = useDrafts();
+  const { drafts, deleteDraft, updateDraft, getDraft } = useDrafts();
 
   const handleOpenDraft = (draft: Draft) => {
     navigate('/write', { state: { draft } });
@@ -160,6 +196,14 @@ const Drafts = () => {
   const handleDeleteDraft = (id: string) => {
     deleteDraft(id);
     toast.success('Draft deleted');
+  };
+
+  const handleRenameDraft = (id: string, newTitle: string) => {
+    const draft = getDraft(id);
+    if (draft) {
+      updateDraft(id, newTitle, draft.content, draft.language);
+      toast.success('Draft renamed');
+    }
   };
 
   return (
@@ -253,6 +297,7 @@ const Drafts = () => {
                     index={index}
                     onOpen={() => handleOpenDraft(draft)}
                     onDelete={() => handleDeleteDraft(draft.id)}
+                    onRename={(newTitle) => handleRenameDraft(draft.id, newTitle)}
                   />
                 ))}
               </AnimatePresence>
