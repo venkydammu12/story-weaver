@@ -118,7 +118,8 @@ const DraftCard = ({
               whileTap={{ scale: 0.9 }}
               onClick={(e) => {
                 e.stopPropagation();
-                onOpen();
+                setIsRenaming(true);
+                setTimeout(() => inputRef.current?.focus(), 50);
               }}
               className="p-2 rounded-lg hover:bg-neutral-800 transition-colors text-neutral-400 hover:text-white"
             >
