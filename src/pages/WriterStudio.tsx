@@ -73,7 +73,7 @@ const SaveStatusIndicator = ({ status, lastSaved, draftId }: {
 const WriterStudio = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { drafts, saveDraft, deleteDraft, draftExists, duplicateDraft, clearAllDrafts } = useDrafts();
+  const { drafts, saveDraft, deleteDraft, draftExists, duplicateDraft, clearAllDrafts, updateDraft, getDraft } = useDrafts();
   
   // Load draft from navigation state if present
   const initialDraft = location.state?.draft as Draft | undefined;
@@ -92,6 +92,8 @@ const WriterStudio = () => {
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [saveTitleInput, setSaveTitleInput] = useState('');
   const [deletingDraftId, setDeletingDraftId] = useState<string | null>(null);
+  const [renamingDraftId, setRenamingDraftId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -360,6 +362,20 @@ const WriterStudio = () => {
     }
     toast.success('Draft deleted');
   }, [deleteDraft, currentDraftId]);
+
+  // Rename a draft inline from the panel
+  const handleRenameDraft = useCallback((id: string, newTitle: string) => {
+    const draft = getDraft(id);
+    if (draft && newTitle.trim() && newTitle.trim() !== draft.title) {
+      updateDraft(id, newTitle.trim(), draft.content, draft.language);
+      if (currentDraftId === id) {
+        setTitle(newTitle.trim());
+      }
+      toast.success('Draft renamed');
+    }
+    setRenamingDraftId(null);
+    setRenameValue('');
+  }, [getDraft, updateDraft, currentDraftId]);
 
   const wordCount = content.split(/\s+/).filter(Boolean).length;
 
@@ -914,19 +930,35 @@ const WriterStudio = () => {
                               ? '1px solid hsl(350 40% 25%)'
                               : '1px solid hsl(0 0% 14%)',
                           }}
-                          onClick={() => handleOpenDraft(draft)}
+                          onClick={() => renamingDraftId === draft.id ? undefined : handleOpenDraft(draft)}
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
-                                <h4 
-                                  className="text-sm text-white font-medium truncate"
-                                  style={{ fontFamily: 'Georgia, serif' }}
-                                >
-                                  {draft.title}
-                                </h4>
-                                {currentDraftId === draft.id && (
-                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-900/30 text-red-400 border border-red-900/40">
+                                {renamingDraftId === draft.id ? (
+                                  <input
+                                    value={renameValue}
+                                    onChange={(e) => setRenameValue(e.target.value)}
+                                    onBlur={() => handleRenameDraft(draft.id, renameValue)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') handleRenameDraft(draft.id, renameValue);
+                                      if (e.key === 'Escape') { setRenamingDraftId(null); setRenameValue(''); }
+                                    }}
+                                    onClick={(e) => e.stopPropagation()}
+                                    autoFocus
+                                    className="text-sm text-white font-medium bg-transparent border-b border-red-900/50 outline-none w-full"
+                                    style={{ fontFamily: 'Georgia, serif' }}
+                                  />
+                                ) : (
+                                  <h4 
+                                    className="text-sm text-white font-medium truncate"
+                                    style={{ fontFamily: 'Georgia, serif' }}
+                                  >
+                                    {draft.title}
+                                  </h4>
+                                )}
+                                {currentDraftId === draft.id && renamingDraftId !== draft.id && (
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-900/30 text-red-400 border border-red-900/40 shrink-0">
                                     Current
                                   </span>
                                 )}
@@ -945,9 +977,11 @@ const WriterStudio = () => {
                                 whileTap={{ scale: 0.9 }}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleOpenDraft(draft);
+                                  setRenamingDraftId(draft.id);
+                                  setRenameValue(draft.title);
                                 }}
                                 className="p-1.5 rounded-lg hover:bg-neutral-700 transition-colors text-neutral-400 hover:text-white"
+                                title="Rename draft"
                               >
                                 <Edit3 size={14} />
                               </motion.button>
