@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.publish-story]
 verify_jwt = false
+
+[functions.extract-document]
+verify_jwt = false

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, Languages, Sparkles, Loader2,
   Save, FolderOpen, Send, Check, ChevronDown,
-  FileText, Clock, Trash2, Edit3, X, Copy, LogOut
+  FileText, Clock, Trash2, Edit3, X, Copy, LogOut, Upload
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -94,8 +94,10 @@ const WriterStudio = () => {
   const [deletingDraftId, setDeletingDraftId] = useState<string | null>(null);
   const [renamingDraftId, setRenamingDraftId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const currentDraftIdRef = useRef<string | null>(currentDraftId);
 
@@ -377,6 +379,92 @@ const WriterStudio = () => {
     setRenameValue('');
   }, [getDraft, updateDraft, currentDraftId]);
 
+  // Handle document upload - extract text and insert into editor
+  const handleDocumentUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Reset input so same file can be re-uploaded
+    e.target.value = '';
+
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      toast.error('File too large. Maximum size is 10MB.');
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      // For plain text files, read directly
+      if (file.type === 'text/plain' || file.name.endsWith('.txt') || file.name.endsWith('.md')) {
+        const text = await file.text();
+        if (!text.trim()) {
+          toast.error('The file appears to be empty');
+          return;
+        }
+        setContent(prev => prev ? prev + '\n\n' + text : text);
+        if (!title && file.name) {
+          setTitle(file.name.replace(/\.[^/.]+$/, ''));
+        }
+        toast.success(`Loaded "${file.name}" — select a language and click Convert to translate`);
+        return;
+      }
+
+      // For other documents (PDF, DOCX, etc.), send to edge function for extraction
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast.error('Please sign in to use this feature');
+        return;
+      }
+
+      // Convert file to base64
+      const arrayBuffer = await file.arrayBuffer();
+      const base64 = btoa(
+        new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
+      );
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-document`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            fileBase64: base64,
+            fileName: file.name,
+            mimeType: file.type,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to extract text from document');
+      }
+
+      const data = await response.json();
+      const extractedText = data.text?.trim();
+
+      if (!extractedText) {
+        toast.error('Could not extract text from this document');
+        return;
+      }
+
+      setContent(prev => prev ? prev + '\n\n' + extractedText : extractedText);
+      if (!title && file.name) {
+        setTitle(file.name.replace(/\.[^/.]+$/, ''));
+      }
+      toast.success(`Extracted text from "${file.name}" — select a language and click Convert to translate`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to process document');
+    } finally {
+      setIsUploading(false);
+    }
+  }, [title]);
+
   const wordCount = content.split(/\s+/).filter(Boolean).length;
 
   return (
@@ -621,7 +709,32 @@ const WriterStudio = () => {
                 <span className="hidden sm:inline">Convert</span>
               </motion.button>
 
-              {/* Save Button */}
+              {/* Upload Document Button */}
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-amber-900/30 to-amber-800/20 border border-amber-900/40 text-amber-300 hover:from-amber-900/40 hover:to-amber-800/30 transition-all duration-300 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {isUploading ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Upload size={16} />
+                )}
+                <span className="hidden sm:inline">Upload</span>
+              </motion.button>
+
+              {/* Hidden file input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".txt,.md,.pdf,.doc,.docx,.rtf,.odt,.png,.jpg,.jpeg,.webp"
+                onChange={handleDocumentUpload}
+                className="hidden"
+              />
+
+
               <motion.button
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
