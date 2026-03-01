@@ -155,23 +155,25 @@ const WriterStudio = () => {
     setIsConverting(true);
     
     try {
-      // Get authenticated session for the request
+      // Get session if available, otherwise use anon key
       const { data: { session } } = await supabase.auth.getSession();
       
-      if (!session?.access_token) {
-        toast.error('Please sign in to use this feature');
-        setIsConverting(false);
-        return;
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      };
+      
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      } else {
+        headers['Authorization'] = `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`;
       }
 
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/convert-language`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
+          headers,
           body: JSON.stringify({
             text: content.trim().slice(0, 50000),
             targetLanguage: selectedLanguage,
@@ -413,9 +415,16 @@ const WriterStudio = () => {
 
       // For other documents (PDF, DOCX, etc.), send to edge function for extraction
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        toast.error('Please sign in to use this feature');
-        return;
+      
+      const uploadHeaders: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      };
+      
+      if (session?.access_token) {
+        uploadHeaders['Authorization'] = `Bearer ${session.access_token}`;
+      } else {
+        uploadHeaders['Authorization'] = `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`;
       }
 
       // Convert file to base64
@@ -428,10 +437,7 @@ const WriterStudio = () => {
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-document`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
+          headers: uploadHeaders,
           body: JSON.stringify({
             fileBase64: base64,
             fileName: file.name,
