@@ -97,10 +97,18 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
+      const errText = await response.text();
+      console.error("AI gateway error:", response.status, errText);
       if (response.status === 429) {
         return new Response(
           JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (response.status === 402) {
+        return new Response(
+          JSON.stringify({ error: "Payment required. Please add credits." }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       return new Response(
@@ -116,7 +124,8 @@ serve(async (req) => {
       JSON.stringify({ text }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-  } catch {
+  } catch (err) {
+    console.error("Unexpected error:", err);
     return new Response(
       JSON.stringify({ error: "An unexpected error occurred" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

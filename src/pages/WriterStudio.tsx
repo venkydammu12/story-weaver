@@ -413,6 +413,24 @@ const WriterStudio = () => {
         return;
       }
 
+      // For DOCX files, extract text client-side using mammoth
+      if (file.name.endsWith('.docx') || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        const mammoth = await import('mammoth');
+        const arrayBuffer = await file.arrayBuffer();
+        const result = await mammoth.extractRawText({ arrayBuffer });
+        const text = result.value?.trim();
+        if (!text) {
+          toast.error('Could not extract text from this document');
+          return;
+        }
+        setContent(prev => prev ? prev + '\n\n' + text : text);
+        if (!title && file.name) {
+          setTitle(file.name.replace(/\.[^/.]+$/, ''));
+        }
+        toast.success(`Loaded "${file.name}" — select a language and click Convert to translate`);
+        return;
+      }
+
       // For other documents (PDF, DOCX, etc.), send to edge function for extraction
       const { data: { session } } = await supabase.auth.getSession();
       
