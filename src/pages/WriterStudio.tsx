@@ -431,6 +431,34 @@ const WriterStudio = () => {
         return;
       }
 
+      // For PDF files, extract text client-side using pdfjs-dist
+      if (file.name.endsWith('.pdf') || file.type === 'application/pdf') {
+        const pdfjsLib = await import('pdfjs-dist');
+        pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+          'pdfjs-dist/build/pdf.worker.mjs',
+          import.meta.url
+        ).toString();
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        let fullText = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          fullText += content.items.map((item: any) => item.str).join(' ') + '\n';
+        }
+        const text = fullText.trim();
+        if (!text) {
+          toast.error('Could not extract text from this PDF. It may be a scanned/image PDF.');
+          return;
+        }
+        setContent(prev => prev ? prev + '\n\n' + text : text);
+        if (!title && file.name) {
+          setTitle(file.name.replace(/\.[^/.]+$/, ''));
+        }
+        toast.success(`Loaded "${file.name}" — select a language and click Convert to translate`);
+        return;
+      }
+
       // For other documents (PDF, DOCX, etc.), send to edge function for extraction
       const { data: { session } } = await supabase.auth.getSession();
       
