@@ -448,7 +448,51 @@ const WriterStudio = () => {
         }
         const text = fullText.trim();
         if (!text) {
-          toast.error('Could not extract text from this PDF. It may be a scanned/image PDF.');
+          // Scanned/image PDF — fall back to edge function OCR
+          toast.info('No selectable text found. Using OCR to extract text…');
+          try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const uploadHeaders: Record<string, string> = {
+              'Content-Type': 'application/json',
+              'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+              'Authorization': session?.access_token
+                ? `Bearer ${session.access_token}`
+                : `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            };
+            const base64 = btoa(
+              new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
+            );
+            const ocrResponse = await fetch(
+              `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-document`,
+              {
+                method: 'POST',
+                headers: uploadHeaders,
+                body: JSON.stringify({
+                  fileBase64: base64,
+                  fileName: file.name,
+                  mimeType: file.type || 'application/pdf',
+                }),
+              }
+            );
+            if (!ocrResponse.ok) {
+              const errData = await ocrResponse.json().catch(() => ({}));
+              throw new Error(errData.error || 'OCR extraction failed');
+            }
+            const ocrData = await ocrResponse.json();
+            const ocrText = ocrData.text?.trim();
+            if (!ocrText) {
+              toast.error('Could not extract text from this scanned PDF.');
+              return;
+            }
+            setContent(prev => prev ? prev + '\n\n' + ocrText : ocrText);
+            if (!title && file.name) {
+              setTitle(file.name.replace(/\.[^/.]+$/, ''));
+            }
+            toast.success(`OCR extracted text from "${file.name}" — select a language and click Convert to translate`);
+          } catch (ocrErr: any) {
+            console.error('OCR fallback error:', ocrErr);
+            toast.error(ocrErr.message || 'Failed to OCR this PDF');
+          }
           return;
         }
         setContent(prev => prev ? prev + '\n\n' + text : text);
