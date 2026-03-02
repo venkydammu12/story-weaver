@@ -64,7 +64,32 @@ serve(async (req) => {
       );
     }
 
-    const dataUrl = `data:${mimeType || "application/octet-stream"};base64,${fileBase64}`;
+    // Build message content based on file type
+    const isPdf = (mimeType || '').includes('pdf') || (fileName || '').toLowerCase().endsWith('.pdf');
+    
+    const userContent: any[] = [
+      {
+        type: "text",
+        text: `Extract all text from this document file "${fileName || "document"}". Return the complete text content exactly as it appears.`,
+      },
+    ];
+
+    if (isPdf) {
+      // For PDFs, use file/document input format that Gemini supports
+      userContent.push({
+        type: "file",
+        file: {
+          filename: fileName || "document.pdf",
+          file_data: `data:application/pdf;base64,${fileBase64}`,
+        },
+      });
+    } else {
+      const dataUrl = `data:${mimeType || "application/octet-stream"};base64,${fileBase64}`;
+      userContent.push({
+        type: "image_url",
+        image_url: { url: dataUrl },
+      });
+    }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -81,16 +106,7 @@ serve(async (req) => {
           },
           {
             role: "user",
-            content: [
-              {
-                type: "text",
-                text: `Extract all text from this document file "${fileName || "document"}". Return the complete text content exactly as it appears.`,
-              },
-              {
-                type: "image_url",
-                image_url: { url: dataUrl },
-              },
-            ],
+            content: userContent,
           },
         ],
       }),
