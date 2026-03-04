@@ -211,11 +211,8 @@ const Author = () => {
   }, [user, authLoading]);
 
   const handleWriteClick = () => {
-    if (sessionStorage.getItem('author_access') === 'granted') {
-      navigate('/write');
-      return;
-    }
-    window.setTimeout(() => setShowLoginModal(true), 0);
+    // Always show password modal from Author page
+    setShowLoginModal(true);
   };
 
   const handleLoginSuccess = () => {
