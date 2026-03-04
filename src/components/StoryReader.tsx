@@ -1,8 +1,9 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Headphones, Languages, X, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface StoryReaderProps {
   storyId?: string;
@@ -23,6 +24,10 @@ export const StoryReader = ({ storyId, onBack }: StoryReaderProps) => {
   const [currentLine, setCurrentLine] = useState<number | null>(null);
   const [selectedLanguage, setSelectedLanguage] = useState<Language>("english");
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [translatedContent, setTranslatedContent] = useState<string | null>(null);
+  const [translatedTitle, setTranslatedTitle] = useState<string | null>(null);
+  const [isTranslating, setIsTranslating] = useState(false);
+  const translationCache = useRef<Record<string, { title: string; content: string }>>({});
 
   // Fetch story from database
   const { data: story, isLoading } = useQuery({
@@ -41,22 +46,74 @@ export const StoryReader = ({ storyId, onBack }: StoryReaderProps) => {
     enabled: !!storyId,
   });
 
-  const handleLanguageChange = (language: Language) => {
+  const translateText = async (text: string, targetLanguage: string): Promise<string> => {
+    const { data, error } = await supabase.functions.invoke("convert-language", {
+      body: { text, targetLanguage },
+    });
+    if (error) throw error;
+    return data.convertedText || text;
+  };
+
+  const handleLanguageChange = async (language: Language) => {
     if (language === selectedLanguage) {
       setShowLanguagePanel(false);
       return;
     }
-    
+
+    setShowLanguagePanel(false);
+
+    // If switching back to original language, clear translations
+    if (language === "english") {
+      setIsTransitioning(true);
+      setTimeout(() => {
+        setSelectedLanguage(language);
+        setTranslatedContent(null);
+        setTranslatedTitle(null);
+        setIsTransitioning(false);
+      }, 300);
+      return;
+    }
+
+    // Check cache first
+    const cacheKey = `${storyId}-${language}`;
+    if (translationCache.current[cacheKey]) {
+      setIsTransitioning(true);
+      setTimeout(() => {
+        setSelectedLanguage(language);
+        setTranslatedTitle(translationCache.current[cacheKey].title);
+        setTranslatedContent(translationCache.current[cacheKey].content);
+        setIsTransitioning(false);
+      }, 300);
+      return;
+    }
+
+    // Translate via edge function
+    setIsTranslating(true);
     setIsTransitioning(true);
-    setTimeout(() => {
+
+    try {
+      const [newTitle, newContent] = await Promise.all([
+        translateText(story?.title || "", language),
+        translateText(story?.content || "", language),
+      ]);
+
+      translationCache.current[cacheKey] = { title: newTitle, content: newContent };
       setSelectedLanguage(language);
+      setTranslatedTitle(newTitle);
+      setTranslatedContent(newContent);
+    } catch (err) {
+      console.error("Translation error:", err);
+      toast.error("Translation failed. Please try again.");
+    } finally {
+      setIsTranslating(false);
       setIsTransitioning(false);
-      setShowLanguagePanel(false);
-    }, 300);
+    }
   };
 
-  // Split content into paragraphs
-  const paragraphs = story?.content?.split('\n').filter(p => p.trim()) || [];
+  // Use translated content if available, otherwise original
+  const displayTitle = translatedTitle || story?.title || "";
+  const displayContent = translatedContent || story?.content || "";
+  const paragraphs = displayContent.split('\n').filter(p => p.trim());
 
   if (isLoading) {
     return (
@@ -109,6 +166,23 @@ export const StoryReader = ({ storyId, onBack }: StoryReaderProps) => {
         </span>
       </motion.div>
 
+      {/* Translating overlay */}
+      {isTranslating && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-40 flex items-center justify-center bg-background/60 backdrop-blur-sm"
+        >
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <span className="text-sm text-muted-foreground spacing-cinematic uppercase">
+              Translating to {languageLabels[selectedLanguage]}...
+            </span>
+          </div>
+        </motion.div>
+      )}
+
       {/* Story content */}
       <motion.article 
         animate={{ opacity: isTransitioning ? 0 : 1 }}
@@ -126,7 +200,7 @@ export const StoryReader = ({ storyId, onBack }: StoryReaderProps) => {
             Author
           </p>
           <h1 className="font-display text-3xl md:text-5xl text-foreground mb-8">
-            {story.title}
+            {displayTitle}
           </h1>
           <div className="w-16 h-px bg-primary/30 mx-auto" />
         </motion.header>
