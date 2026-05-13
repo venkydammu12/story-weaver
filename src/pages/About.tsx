@@ -401,7 +401,7 @@ const About = () => {
 
       {/* Footer */}
       <footer className="py-16 text-center border-t border-white/5">
-        <p className="text-muted-foreground/50 text-xs tracking-[0.2em] uppercase">
+        <p className="text-muted-foreground text-xs tracking-[0.2em] uppercase">
           Narrativa — Stories that breathe
         </p>
       </footer>

@@ -97,7 +97,7 @@ const StoriesPosters = () => {
             transition={{ duration: 0.8, delay: 1 }}
             className="mt-24 text-center"
           >
-            <p className="text-muted-foreground/50 text-xs spacing-cinematic uppercase">
+            <p className="text-muted-foreground text-xs spacing-cinematic uppercase">
               More stories coming soon
             </p>
           </motion.div>

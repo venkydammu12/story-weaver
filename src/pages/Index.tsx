@@ -122,7 +122,7 @@ const Index = () => {
 
             {/* Footer */}
             <footer className="py-16 text-center">
-              <p className="text-muted-foreground/50 text-xs spacing-cinematic uppercase">
+              <p className="text-muted-foreground text-xs spacing-cinematic uppercase">
                 Narrativa — Stories that breathe
               </p>
             </footer>
