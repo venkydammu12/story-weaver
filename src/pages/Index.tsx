@@ -5,6 +5,7 @@ import { CinematicIntro } from "@/components/CinematicIntro";
 import { CinematicNavigation } from "@/components/CinematicNavigation";
 import { ParallaxBackground } from "@/components/ParallaxBackground";
 import { StoryReveal } from "@/components/StoryReveal";
+import { SEO } from "@/components/SEO";
 
 import { FinalInvitation } from "@/components/FinalInvitation";
 import { StoryWorld } from "@/components/StoryWorld";
@@ -69,6 +70,25 @@ const Index = () => {
       className="relative bg-background min-h-screen overflow-x-hidden"
       style={{ perspective: '2000px', transformStyle: 'preserve-3d' }}
     >
+      <SEO
+        title="Narrativa — Cinematic Storytelling Experience"
+        description="Enter a world where stories come alive through voice and emotion. Immersive storytelling with cinematic narration."
+        path="/"
+        jsonLd={[
+          {
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            name: "Narrativa",
+            url: "https://enter-the-cinematic-narrative.lovable.app",
+          },
+          {
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            name: "Narrativa",
+            url: "https://enter-the-cinematic-narrative.lovable.app",
+          },
+        ]}
+      />
       <ParallaxBackground />
 
       <AnimatePresence mode="wait">
@@ -102,7 +122,7 @@ const Index = () => {
 
             {/* Footer */}
             <footer className="py-16 text-center">
-              <p className="text-muted-foreground/50 text-xs spacing-cinematic uppercase">
+              <p className="text-muted-foreground text-xs spacing-cinematic uppercase">
                 Narrativa — Stories that breathe
               </p>
             </footer>

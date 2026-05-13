@@ -89,7 +89,7 @@ export const StoryWorld = ({ onStorySelect, onBack }: StoryWorldProps) => {
             className="text-center py-20"
           >
             <p className="text-muted-foreground text-lg">No published stories yet.</p>
-            <p className="text-muted-foreground/60 text-sm mt-2">Be the first to publish a story!</p>
+            <p className="text-muted-foreground text-sm mt-2">Be the first to publish a story!</p>
           </motion.div>
         )}
 

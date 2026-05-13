@@ -98,7 +98,7 @@ const NotFound = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.8 }}
-          className="mt-12 text-sm text-muted-foreground/60"
+          className="mt-12 text-sm text-muted-foreground"
         >
           Attempted path: <code className="px-2 py-1 bg-muted rounded text-xs">{location.pathname}</code>
         </motion.p>

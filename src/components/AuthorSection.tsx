@@ -272,7 +272,7 @@ export const AuthorSection = () => {
                   background: "linear-gradient(90deg, hsl(0 100% 30% / 0.6), transparent)",
                 }}
               />
-              <span className="font-display text-lg italic text-muted-foreground/60">
+              <span className="font-display text-lg italic text-muted-foreground">
                 — With ink and soul
               </span>
             </motion.div>
