@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { PosterCard } from "@/components/PosterCard";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { stories, Language } from "@/data/stories";
+import { SEO } from "@/components/SEO";
 
 const StoriesPosters = () => {
   const [language, setLanguage] = useState<Language>("en");
@@ -15,6 +16,18 @@ const StoriesPosters = () => {
       className="min-h-screen bg-background"
       style={{ perspective: '2000px', transformStyle: 'preserve-3d' }}
     >
+      <SEO
+        title="Story Posters — Narrativa Collection"
+        description="Explore Narrativa's cinematic collection of stories. Each poster a journey, each title a world ready to unfold."
+        path="/stories"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "CollectionPage",
+          name: "Narrativa Story Posters",
+          url: "https://enter-the-cinematic-narrative.lovable.app/stories",
+          description: "Cinematic collection of stories on Narrativa.",
+        }}
+      />
       {/* Fixed Navigation */}
       <motion.nav
         initial={{ opacity: 0, y: -20 }}
