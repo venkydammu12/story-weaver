@@ -1,0 +1,10 @@
+# Narrativa
+
+> Cinematic storytelling platform where written stories become immersive, voice-driven experiences with emotion, language switching, and AI narration.
+
+## Pages
+
+- [Home](/): Landing experience and entry into the story world.
+- [Stories](/stories): Collection of cinematic story posters.
+- [Author](/author): The storyteller behind Narrativa.
+- [About](/about): The vision, voice, and craft behind the platform.
