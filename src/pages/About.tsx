@@ -3,6 +3,7 @@ import { useRef } from "react";
 import { CinematicNavigation } from "@/components/CinematicNavigation";
 import { ParallaxBackground } from "@/components/ParallaxBackground";
 import { ParallaxImage } from "@/components/ParallaxImage";
+import { SEO } from "@/components/SEO";
 
 // Import AI-generated images
 import heroImage from "@/assets/about-hero.jpg";
@@ -135,6 +136,11 @@ const About = () => {
       className="relative bg-background min-h-screen overflow-x-hidden"
       style={{ perspective: '2000px', transformStyle: 'preserve-3d' }}
     >
+      <SEO
+        title="About Narrativa — The Story Behind Stories"
+        description="Discover the vision behind Narrativa: a cinematic storytelling platform where words become worlds and narration becomes emotion."
+        path="/about"
+      />
       <ParallaxBackground />
       <CinematicNavigation />
 
