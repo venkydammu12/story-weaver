@@ -6,6 +6,7 @@ import { CinematicNavigation } from '@/components/CinematicNavigation';
 import { ParallaxImage } from '@/components/ParallaxImage';
 import { AuthLogin } from '@/components/AuthLogin';
 import { useAuth } from '@/hooks/useAuth';
+import { SEO } from '@/components/SEO';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import authorProfile from '@/assets/author-profile.jpeg';
@@ -243,6 +244,19 @@ const Author = () => {
       isOpen={showLoginModal} 
       onClose={() => setShowLoginModal(false)}
       onSuccess={handleLoginSuccess}
+    />
+    <SEO
+      title="The Author — Narrativa"
+      description="Meet the storyteller behind Narrativa. A glimpse into the mind crafting cinematic narratives, voice, and emotion."
+      path="/author"
+      type="profile"
+      jsonLd={{
+        "@context": "https://schema.org",
+        "@type": "Person",
+        name: "Narrativa Author",
+        url: "https://enter-the-cinematic-narrative.lovable.app/author",
+        description: "Storyteller behind Narrativa's cinematic narratives.",
+      }}
     />
     <div 
       className="min-h-screen bg-black text-white overflow-x-hidden"
